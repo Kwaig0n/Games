@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f0f;
+      font-family: 'Courier New', monospace;
+      color: #e0e0e0;
+    }
+
+    .container {
+      text-align: center;
+    }
+
+    .time {
+      font-size: clamp(3rem, 15vw, 10rem);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    .seconds {
+      color: #888;
+    }
+
+    .date {
+      margin-top: 1rem;
+      font-size: clamp(0.9rem, 2.5vw, 1.4rem);
+      color: #666;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .period {
+      display: inline-block;
+      margin-left: 0.5rem;
+      font-size: 0.4em;
+      vertical-align: middle;
+      color: #555;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="time">
+      <span id="hours"></span><span style="color:#444">:</span><span id="minutes"></span><span style="color:#333">:</span><span class="seconds" id="seconds"></span><span class="period" id="period"></span>
+    </div>
+    <div class="date" id="date"></div>
+  </div>
+
+  <script>
+    function pad(n) {
+      return String(n).padStart(2, '0');
+    }
+
+    function update() {
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+
+      document.getElementById('hours').textContent = pad(hours);
+      document.getElementById('minutes').textContent = pad(minutes);
+      document.getElementById('seconds').textContent = pad(seconds);
+      document.getElementById('period').textContent = period;
+
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+      document.getElementById('date').textContent = dateStr;
+    }
+
+    update();
+    setInterval(update, 1000);
+  </script>
+</body>
+</html>
