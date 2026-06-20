@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AU Restaurant Discount Scanner</title>
+<style>
+:root {
+  --bg: #0f1923;
+  --surface: #1c2a38;
+  --surface2: #243547;
+  --accent: #f5a623;
+  --danger: #e74c3c;
+  --text: #ecf0f1;
+  --muted: #7f8c8d;
+  --border: #2c3e50;
+  --radius: 12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+header{
+  background:linear-gradient(135deg,#0d1b2a,#1a2f45);
+  border-bottom:1px solid var(--border);
+  padding:28px 20px;text-align:center;
+}
+.logo{font-size:2rem;font-weight:900;color:var(--accent);letter-spacing:3px;text-transform:uppercase}
+.logo span{color:#fff}
+.tagline{color:var(--muted);margin-top:6px;font-size:.9rem;letter-spacing:1px}
+
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+
+.search-card{
+  background:var(--surface);border-radius:var(--radius);
+  padding:28px;border:1px solid var(--border);margin:28px auto;
+}
+.form-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.fg{flex:1;min-width:150px}
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;
+  letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
+select,input[type=text]{
+  width:100%;padding:11px 14px;
+  background:#0f1923;border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:14px;outline:none;
+  transition:border-color .2s;
+}
+select:focus,input:focus{border-color:var(--accent)}
+option{background:#1c2a38}
+
+.btn{
+  padding:11px 24px;background:var(--accent);color:#000;
+  font-weight:700;border:none;border-radius:8px;cursor:pointer;
+  font-size:13px;letter-spacing:1.5px;text-transform:uppercase;
+  transition:opacity .15s,transform .1s;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;justify-content:center;
+  min-width:130px;
+}
+.btn:hover{opacity:.88}
+.btn:active{transform:scale(.97)}
+.btn-outline{
+  background:transparent;color:var(--accent);border:1px solid var(--accent);
+}
+.btn-outline:hover{background:rgba(245,166,35,.1)}
+.btn-sm{padding:7px 16px;font-size:11px;min-width:auto;border-radius:6px}
+
+/* Platform grid */
+.section-title{
+  font-size:.75rem;text-transform:uppercase;letter-spacing:2px;
+  color:var(--muted);font-weight:700;margin-bottom:12px;
+}
+
+.platforms-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:12px;margin-bottom:32px;
+}
+
+.platform-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;
+  transition:border-color .2s,transform .1s;
+  display:flex;flex-direction:column;gap:10px;
+}
+.platform-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+
+.platform-top{display:flex;align-items:center;gap:10px}
+.platform-icon{font-size:1.5rem;flex-shrink:0}
+.platform-name{font-weight:700;font-size:1rem}
+.platform-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+.platform-tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{
+  padding:3px 9px;border-radius:10px;font-size:10px;font-weight:600;
+  letter-spacing:.5px;text-transform:uppercase;
+}
+.tag-green{background:rgba(39,174,96,.15);color:#27ae60;border:1px solid rgba(39,174,96,.25)}
+.tag-orange{background:rgba(245,166,35,.15);color:var(--accent);border:1px solid rgba(245,166,35,.25)}
+.tag-red{background:rgba(231,76,60,.15);color:var(--danger);border:1px solid rgba(231,76,60,.25)}
+.tag-blue{background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.25)}
+.tag-purple{background:rgba(155,89,182,.15);color:#9b59b6;border:1px solid rgba(155,89,182,.25)}
+
+.platform-actions{display:flex;gap:8px;margin-top:2px}
+.open-btn{
+  flex:1;padding:9px 14px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;text-align:center;
+  letter-spacing:.5px;
+}
+.open-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* open-all bar */
+.open-all-bar{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin-bottom:24px;flex-wrap:wrap;
+}
+.oab-text{font-size:.9rem}
+.oab-text strong{color:var(--accent)}
+
+/* search tips */
+.tips-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:10px;margin-bottom:32px;
+}
+.tip-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;font-size:13px;
+}
+.tip-card strong{display:block;color:var(--accent);margin-bottom:4px;font-size:11px;
+  text-transform:uppercase;letter-spacing:1px}
+.tip-card span{color:var(--muted)}
+
+footer{
+  border-top:1px solid var(--border);padding:20px;text-align:center;
+  color:var(--muted);font-size:12px;margin-top:16px;
+}
+
+/* Result flash */
+.city-display{
+  display:inline-block;padding:3px 12px;border-radius:20px;
+  background:rgba(245,166,35,.15);color:var(--accent);
+  border:1px solid rgba(245,166,35,.3);font-weight:700;font-size:.85rem;
+}
+
+@media(max-width:560px){
+  .logo{font-size:1.4rem;letter-spacing:1px}
+  .form-row{flex-direction:column}
+  .btn{width:100%}
+  .open-all-bar{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🇦🇺 AU Restaurant <span>Discounts</span></div>
+  <div class="tagline">One-click access to every major Australian restaurant discount platform</div>
+</header>
+
+<div class="wrap">
+
+  <!-- Search form -->
+  <div class="search-card">
+    <div class="form-row">
+      <div class="fg">
+        <label>City</label>
+        <select id="city">
+          <option value="Sydney">Sydney</option>
+          <option value="Melbourne">Melbourne</option>
+          <option value="Brisbane">Brisbane</option>
+          <option value="Perth">Perth</option>
+          <option value="Adelaide">Adelaide</option>
+          <option value="Canberra">Canberra</option>
+          <option value="Hobart">Hobart</option>
+          <option value="Darwin">Darwin</option>
+          <option value="Gold Coast">Gold Coast</option>
+          <option value="Newcastle">Newcastle</option>
+          <option value="Wollongong">Wollongong</option>
+          <option value="Geelong">Geelong</option>
+          <option value="Townsville">Townsville</option>
+          <option value="Cairns">Cairns</option>
+          <option value="Toowoomba">Toowoomba</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Cuisine (optional)</label>
+        <input type="text" id="cuisine" placeholder="e.g. Italian, Sushi, Burger…"
+          list="cuisine-list" autocomplete="off">
+        <datalist id="cuisine-list">
+          <option value="Italian"><option value="Chinese"><option value="Japanese">
+          <option value="Thai"><option value="Indian"><option value="Mexican">
+          <option value="Greek"><option value="Vietnamese"><option value="Korean">
+          <option value="Pizza"><option value="Sushi"><option value="Burger">
+          <option value="Seafood"><option value="Steakhouse"><option value="French">
+          <option value="Lebanese"><option value="Spanish"><option value="Turkish">
+        </datalist>
+      </div>
+      <button class="btn" onclick="updateLinks()">🔍 Find Deals</button>
+    </div>
+  </div>
+
+  <!-- Open-all bar (hidden until first search) -->
+  <div class="open-all-bar" id="open-all-bar" style="display:none">
+    <div class="oab-text">
+      Showing deals for <span class="city-display" id="city-display">Sydney</span>
+      — open all platforms at once:
+    </div>
+    <button class="btn btn-sm" onclick="openAll()">⚡ Open All Platforms</button>
+  </div>
+
+  <!-- Platform cards -->
+  <div class="section-title" id="platforms-label">Featured Platforms</div>
+  <div class="platforms-grid" id="platforms-grid">
+    <!-- injected by JS -->
+  </div>
+
+  <!-- Tips -->
+  <div class="section-title">Scanning Tips</div>
+  <div class="tips-grid">
+    <div class="tip-card">
+      <strong>Happy Hour</strong>
+      <span>Check EatClub between 2–5 PM for last-minute happy hour deals up to 50% off</span>
+    </div>
+    <div class="tip-card">
+      <strong>Weekly Vouchers</strong>
+      <span>Groupon and Scoopon refresh deals every Monday — check early for best selection</span>
+    </div>
+    <div class="tip-card">
+      <strong>Group Bookings</strong>
+      <span>Quandoo and Dimmi often have special rates for tables of 4 or more</span>
+    </div>
+    <div class="tip-card">
+      <strong>Email Sign-up</strong>
+      <span>Register on EatClub and Scoopon to get exclusive member-only discount codes</span>
+    </div>
+    <div class="tip-card">
+      <strong>Last-Minute</strong>
+      <span>EatClub shows real-time availability — restaurants post deals to fill empty tables</span>
+    </div>
+    <div class="tip-card">
+      <strong>Stacking Deals</strong>
+      <span>Some venues honour both a Groupon voucher and a student/loyalty card — always ask</span>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Australian Restaurant Discount Scanner &mdash; standalone HTML, no server required
+</footer>
+
+<script>
+'use strict';
+
+const PLATFORMS = [
+  {
+    id: 'eatclub',
+    name: 'EatClub',
+    icon: '🟢',
+    desc: 'Real-time happy hour deals from local restaurants. Often 10–50% off during off-peak hours.',
+    tags: [{ label: 'Happy Hour', cls: 'tag-green' }, { label: 'Real-time', cls: 'tag-orange' }],
+    url: (city, cuisine) =>
+      `https://www.eatclub.com.au/restaurants?location=${enc(city)}${cuisine ? '&search=' + enc(cuisine) : ''}`,
+  },
+  {
+    id: 'groupon',
+    name: 'Groupon AU',
+    icon: '🟩',
+    desc: 'Vouchers and experience packages for restaurants. Great for date-night deals.',
+    tags: [{ label: 'Vouchers', cls: 'tag-green' }, { label: 'Packages', cls: 'tag-blue' }],
+    url: (city, cuisine) => {
+      const slug = city.toLowerCase().replace(/\s+/g, '-');
+      const q = cuisine ? `?query=${enc(cuisine)}` : '';
+      return `https://www.groupon.com.au/local/au/${slug}/restaurants${q}`;
+    },
+  },
+  {
+    id: 'scoopon',
+    name: 'Scoopon',
+    icon: '🔴',
+    desc: 'Australian daily deals site with restaurant experiences and dining vouchers.',
+    tags: [{ label: 'Daily Deals', cls: 'tag-red' }, { label: 'Vouchers', cls: 'tag-orange' }],
+    url: (city, cuisine) =>
+      `https://www.scoopon.com.au/experiences/?q=${enc((cuisine || 'restaurant') + ' ' + city)}&location=${enc(city)}`,
+  },
+  {
+    id: 'lasoo',
+    name: 'Lasoo',
+    icon: '🔵',
+    desc: 'Catalogue-style discounts including restaurant gift cards and dining offers.',
+    tags: [{ label: 'Gift Cards', cls: 'tag-blue' }, { label: 'Catalogues', cls: 'tag-purple' }],
+    url: (city, cuisine) =>
+      `https://www.lasoo.com.au/search/?q=${enc((cuisine || 'restaurant') + ' ' + city)}`,
+  },
+  {
+    id: 'quandoo',
+    name: 'Quandoo',
+    icon: '🟣',
+    desc: 'Restaurant reservations with special discounts for online bookings.',
+    tags: [{ label: 'Reservations', cls: 'tag-purple' }, { label: 'Discounts', cls: 'tag-orange' }],
+    url: (city, cuisine) => {
+      const base = `https://www.quandoo.com.au/en/search/${enc(city)}`;
+      return cuisine ? `${base}?cuisine=${enc(cuisine)}` : base;
+    },
+  },
+  {
+    id: 'dimmi',
+    name: 'Dimmi / ResDiary',
+    icon: '🟠',
+    desc: 'Premium restaurant booking platform with exclusive online specials.',
+    tags: [{ label: 'Fine Dining', cls: 'tag-orange' }, { label: 'Specials', cls: 'tag-green' }],
+    url: (city, cuisine) =>
+      `https://www.dimmi.com.au/${enc(city.toLowerCase())}${cuisine ? '/search?cuisine=' + enc(cuisine) : ''}`,
+  },
+  {
+    id: 'ddg',
+    name: 'Web Search',
+    icon: '🔍',
+    desc: 'Broad web search for restaurant discount codes, coupons, and unadvertised deals.',
+    tags: [{ label: 'Coupons', cls: 'tag-blue' }, { label: 'Codes', cls: 'tag-green' }],
+    url: (city, cuisine) => {
+      const q = `restaurant ${cuisine ? cuisine + ' ' : ''}discount deal "${city}" Australia`;
+      return `https://duckduckgo.com/?q=${enc(q)}`;
+    },
+  },
+  {
+    id: 'google',
+    name: 'Google Deals',
+    icon: '🔎',
+    desc: 'Google search filtered to discount and deal sites for your city and cuisine.',
+    tags: [{ label: 'Broad Search', cls: 'tag-blue' }],
+    url: (city, cuisine) => {
+      const q = `restaurant ${cuisine ? cuisine + ' ' : ''}deals discounts "${city}" Australia site:eatclub.com.au OR site:groupon.com.au OR site:scoopon.com.au`;
+      return `https://www.google.com/search?q=${enc(q)}`;
+    },
+  },
+];
+
+function enc(s) { return encodeURIComponent(s || ''); }
+
+let currentLinks = {};
+
+function getValues() {
+  return {
+    city: document.getElementById('city').value,
+    cuisine: document.getElementById('cuisine').value.trim(),
+  };
+}
+
+function buildCard(p, city, cuisine) {
+  const url = p.url(city, cuisine);
+  currentLinks[p.id] = url;
+  const tagsHtml = p.tags.map(t => `<span class="tag ${t.cls}">${t.label}</span>`).join('');
+  return `
+    <div class="platform-card">
+      <div class="platform-top">
+        <div class="platform-icon">${p.icon}</div>
+        <div class="platform-name">${p.name}</div>
+      </div>
+      <div class="platform-desc">${p.desc}</div>
+      <div class="platform-tags">${tagsHtml}</div>
+      <div class="platform-actions">
+        <a href="${escAttr(url)}" target="_blank" rel="noopener" class="open-btn">
+          Open ${p.name} →
+        </a>
+      </div>
+    </div>
+  `;
+}
+
+function escAttr(s) {
+  return String(s).replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function updateLinks() {
+  const { city, cuisine } = getValues();
+
+  document.getElementById('city-display').textContent = city + (cuisine ? ` · ${cuisine}` : '');
+  document.getElementById('open-all-bar').style.display = '';
+  document.getElementById('platforms-label').textContent =
+    `Deals in ${city}${cuisine ? ' — ' + cuisine : ''}`;
+
+  const grid = document.getElementById('platforms-grid');
+  grid.innerHTML = PLATFORMS.map(p => buildCard(p, city, cuisine)).join('');
+}
+
+function openAll() {
+  const urls = Object.values(currentLinks);
+  if (urls.length === 0) { updateLinks(); return; }
+  for (const url of urls) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+}
+
+// Initialise on load
+window.addEventListener('DOMContentLoaded', () => {
+  updateLinks();
+  document.getElementById('cuisine').addEventListener('keydown', e => {
+    if (e.key === 'Enter') updateLinks();
+  });
+  document.getElementById('city').addEventListener('change', updateLinks);
+});
+</script>
+</body>
+</html>
