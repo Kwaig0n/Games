@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dog Walker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #4a90d9;
+      --primary-dark: #2c6fad;
+      --danger: #e05252;
+      --success: #4caf7d;
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --border: #e2e8f0;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(74,144,217,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header span { font-size: 1.5rem; }
+
+    nav {
+      display: flex;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 52px;
+      z-index: 999;
+    }
+
+    nav button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    nav button.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tab { display: none; padding: 20px; }
+    .tab.active { display: block; }
+
+    /* ── Walk tab ── */
+    #map {
+      height: 340px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card .val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .stat-card .lbl {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .dog-row {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dog-row label { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+
+    .dog-row input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .dog-row input:focus { border-color: var(--primary); }
+
+    .btn-group { display: flex; gap: 12px; }
+
+    .btn {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-start { background: var(--success); color: white; }
+    .btn-start:hover { background: #3d9566; }
+    .btn-stop { background: var(--danger); color: white; }
+    .btn-stop:hover { background: #c43f3f; }
+    .btn-stop:disabled { background: #ccc; cursor: default; }
+    .btn-start:disabled { background: #ccc; cursor: default; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .status-badge.idle { background: #f0f0f0; color: var(--muted); }
+    .status-badge.active { background: #e6f9f0; color: var(--success); }
+
+    /* ── Logs tab ── */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .walk-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
+    }
+
+    .walk-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .walk-card-title { font-weight: 700; font-size: 0.95rem; }
+    .walk-card-date { font-size: 0.75rem; color: var(--muted); }
+
+    .walk-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .walk-meta span strong { color: var(--text); }
+
+    .walk-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .btn-sm {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-sm:active { transform: scale(0.95); }
+    .btn-view { background: #e8f0fe; color: var(--primary-dark); }
+    .btn-share { background: #fef3e8; color: #c67c1a; }
+    .btn-delete { background: #fde8e8; color: var(--danger); }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ── Routes tab ── */
+    #route-map {
+      height: 320px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .route-list { margin-top: 4px; }
+
+    .route-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .route-item.selected { border-color: var(--primary); }
+
+    .route-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .route-name { font-weight: 600; font-size: 0.9rem; }
+    .route-sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Share modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px 32px;
+      width: 100%;
+      max-width: 480px;
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+    .modal p { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; }
+
+    .share-link-box {
+      display: flex;
+      gap: 8px;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      font-family: monospace;
+      word-break: break-all;
+      margin-bottom: 14px;
+    }
+
+    .share-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .share-opt {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.82rem;
+      transition: background 0.15s;
+    }
+
+    .share-opt:hover { background: var(--bg); }
+    .share-opt .ico { font-size: 1.4rem; margin-bottom: 4px; }
+
+    .btn-close-modal {
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── Route view modal ── */
+    #mini-map-modal {
+      height: 260px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      z-index: 3000;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>🐾</span>
+  <h1>Dog Walker</h1>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('walk')">🗺 Walk</button>
+  <button onclick="showTab('logs')">📋 Logs</button>
+  <button onclick="showTab('routes')">📍 Routes</button>
+</nav>
+
+<!-- ══════════════ WALK TAB ══════════════ -->
+<div id="tab-walk" class="tab active">
+  <div id="map"></div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="val" id="stat-time">00:00</div>
+      <div class="lbl">Duration</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" id="stat-dist">0.00</div>
+      <div class="lbl">km</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" id="stat-pts">0</div>
+      <div class="lbl">GPS points</div>
+    </div>
+  </div>
+
+  <div class="dog-row">
+    <label>Dog:</label>
+    <input id="dog-name" type="text" placeholder="Enter dog name" value="" />
+  </div>
+
+  <span id="walk-status" class="status-badge idle">● Idle</span>
+
+  <div class="btn-group">
+    <button id="btn-start" class="btn btn-start" onclick="startWalk()">Start Walk</button>
+    <button id="btn-stop" class="btn btn-stop" onclick="stopWalk()" disabled>Stop & Save</button>
+  </div>
+</div>
+
+<!-- ══════════════ LOGS TAB ══════════════ -->
+<div id="tab-logs" class="tab">
+  <div class="section-title">Walk History</div>
+  <div id="logs-list"></div>
+</div>
+
+<!-- ══════════════ ROUTES TAB ══════════════ -->
+<div id="tab-routes" class="tab">
+  <div class="section-title">Saved Routes</div>
+  <div id="route-map"></div>
+  <div id="route-list" class="route-list"></div>
+</div>
+
+<!-- ══════════════ SHARE MODAL ══════════════ -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal">
+    <h3>Share Route</h3>
+    <p id="share-walk-info">Walk details</p>
+    <div class="share-link-box" id="share-link-text"></div>
+    <div class="share-options">
+      <div class="share-opt" onclick="copyLink()">
+        <div class="ico">📋</div>Copy Link
+      </div>
+      <div class="share-opt" onclick="shareNative()">
+        <div class="ico">↗️</div>Share
+      </div>
+      <div class="share-opt" onclick="downloadGPX()">
+        <div class="ico">⬇️</div>Download GPX
+      </div>
+      <div class="share-opt" onclick="shareWhatsApp()">
+        <div class="ico">💬</div>WhatsApp
+      </div>
+    </div>
+    <button class="btn-close-modal" onclick="closeShare()">Close</button>
+  </div>
+</div>
+
+<!-- ══════════════ ROUTE VIEW MODAL ══════════════ -->
+<div class="modal-overlay" id="view-modal">
+  <div class="modal">
+    <h3 id="view-title">Route</h3>
+    <p id="view-info"></p>
+    <div id="mini-map-modal"></div>
+    <button class="btn-close-modal" onclick="closeView()">Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Storage helpers ──────────────────────────────────────────────────────────
+function loadWalks() {
+  return JSON.parse(localStorage.getItem('dogwalks') || '[]');
+}
+function saveWalks(walks) {
+  localStorage.setItem('dogwalks', JSON.stringify(walks));
+}
+
+// ── Tab navigation ───────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (name === 'logs') renderLogs();
+  if (name === 'routes') renderRoutes();
+}
+
+// ── Main walk map ────────────────────────────────────────────────────────────
+let walkMap, walkPolyline, walkMarker;
+
+function initWalkMap() {
+  walkMap = L.map('map').setView([0, 0], 2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(walkMap);
+  walkPolyline = L.polyline([], { color: '#4a90d9', weight: 4, opacity: 0.85 }).addTo(walkMap);
+}
+
+// ── Walk state ───────────────────────────────────────────────────────────────
+let isWalking = false;
+let walkCoords = [];
+let walkStart = null;
+let timerInterval = null;
+let watchId = null;
+
+function startWalk() {
+  if (!navigator.geolocation) {
+    showToast('Geolocation not supported by this browser.');
+    return;
+  }
+
+  isWalking = true;
+  walkCoords = [];
+  walkStart = Date.now();
+  walkPolyline.setLatLngs([]);
+
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-stop').disabled = false;
+  document.getElementById('walk-status').textContent = '● Active';
+  document.getElementById('walk-status').className = 'status-badge active';
+  document.getElementById('stat-pts').textContent = '0';
+  document.getElementById('stat-dist').textContent = '0.00';
+  document.getElementById('stat-time').textContent = '00:00';
+
+  timerInterval = setInterval(updateTimer, 1000);
+
+  watchId = navigator.geolocation.watchPosition(
+    onPosition,
+    onGeoError,
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+}
+
+function stopWalk() {
+  if (!isWalking) return;
+  isWalking = false;
+  clearInterval(timerInterval);
+  navigator.geolocation.clearWatch(watchId);
+
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-stop').disabled = true;
+  document.getElementById('walk-status').textContent = '● Idle';
+  document.getElementById('walk-status').className = 'status-badge idle';
+
+  if (walkCoords.length < 2) {
+    showToast('Not enough GPS points to save this walk.');
+    return;
+  }
+
+  const duration = Math.floor((Date.now() - walkStart) / 1000);
+  const dist = totalDistance(walkCoords);
+  const dog = document.getElementById('dog-name').value.trim() || 'Unknown Dog';
+
+  const walk = {
+    id: Date.now(),
+    dog,
+    date: new Date(walkStart).toISOString(),
+    duration,
+    distance: dist,
+    coords: walkCoords,
+    color: randomColor()
+  };
+
+  const walks = loadWalks();
+  walks.unshift(walk);
+  saveWalks(walks);
+  showToast('Walk saved!');
+}
+
+function onPosition(pos) {
+  const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+  walkCoords.push([lat, lng]);
+  walkPolyline.addLatLng([lat, lng]);
+
+  if (walkMarker) walkMap.removeLayer(walkMarker);
+  walkMarker = L.circleMarker([lat, lng], {
+    radius: 8, color: '#4a90d9', fillColor: '#fff', fillOpacity: 1, weight: 3
+  }).addTo(walkMap);
+
+  if (walkCoords.length === 1) {
+    walkMap.setView([lat, lng], 16);
+  } else {
+    walkMap.fitBounds(walkPolyline.getBounds(), { padding: [30, 30] });
+  }
+
+  document.getElementById('stat-pts').textContent = walkCoords.length;
+  document.getElementById('stat-dist').textContent = totalDistance(walkCoords).toFixed(2);
+}
+
+function onGeoError(err) {
+  showToast('GPS error: ' + err.message);
+}
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - walkStart) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('stat-time').textContent = `${m}:${s}`;
+}
+
+// ── Geo helpers ──────────────────────────────────────────────────────────────
+function haversine([lat1, lon1], [lat2, lon2]) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function totalDistance(coords) {
+  let d = 0;
+  for (let i = 1; i < coords.length; i++) d += haversine(coords[i-1], coords[i]);
+  return d;
+}
+
+function randomColor() {
+  const colors = ['#4a90d9','#e05252','#4caf7d','#f0a500','#9b59b6','#e67e22','#1abc9c','#e91e63'];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
+// ── Logs tab ─────────────────────────────────────────────────────────────────
+function renderLogs() {
+  const container = document.getElementById('logs-list');
+  const walks = loadWalks();
+
+  if (walks.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🐕</div><p>No walks yet.<br>Start your first walk!</p></div>`;
+    return;
+  }
+
+  container.innerHTML = walks.map(w => {
+    const date = new Date(w.date);
+    const dateStr = date.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    const timeStr = date.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+    const dur = formatDuration(w.duration);
+    return `
+      <div class="walk-card">
+        <div class="walk-card-header">
+          <div>
+            <div class="walk-card-title">🐶 ${escHtml(w.dog)}</div>
+            <div class="walk-card-date">${dateStr} at ${timeStr}</div>
+          </div>
+          <div style="width:10px;height:10px;border-radius:50%;background:${w.color};margin-top:4px;"></div>
+        </div>
+        <div class="walk-meta">
+          <span><strong>${w.distance.toFixed(2)}</strong> km</span>
+          <span><strong>${dur}</strong> duration</span>
+          <span><strong>${w.coords.length}</strong> GPS pts</span>
+        </div>
+        <div class="walk-actions">
+          <button class="btn-sm btn-view" onclick="viewWalk(${w.id})">View Route</button>
+          <button class="btn-sm btn-share" onclick="openShare(${w.id})">Share</button>
+          <button class="btn-sm btn-delete" onclick="deleteWalk(${w.id})">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function deleteWalk(id) {
+  const walks = loadWalks().filter(w => w.id !== id);
+  saveWalks(walks);
+  renderLogs();
+  renderRoutes();
+  showToast('Walk deleted.');
+}
+
+function formatDuration(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Routes tab ───────────────────────────────────────────────────────────────
+let routeMap, routeLayers = {};
+let selectedRouteId = null;
+
+function renderRoutes() {
+  const walks = loadWalks();
+  const container = document.getElementById('route-list');
+
+  if (!routeMap) {
+    routeMap = L.map('route-map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(routeMap);
+  }
+
+  // Clear existing layers
+  Object.values(routeLayers).forEach(l => routeMap.removeLayer(l));
+  routeLayers = {};
+
+  if (walks.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🗺️</div><p>No routes yet.<br>Complete a walk to see routes here.</p></div>`;
+    routeMap.setView([0, 0], 2);
+    return;
+  }
+
+  // Draw all routes on map
+  const allBounds = [];
+  walks.forEach(w => {
+    if (w.coords.length < 2) return;
+    const poly = L.polyline(w.coords, {
+      color: w.color, weight: 3, opacity: 0.75
+    }).addTo(routeMap);
+    poly.on('click', () => selectRoute(w.id));
+    routeLayers[w.id] = poly;
+    w.coords.forEach(c => allBounds.push(c));
+  });
+
+  if (allBounds.length) {
+    routeMap.fitBounds(allBounds, { padding: [20, 20] });
+  }
+
+  // Route list
+  container.innerHTML = walks.map(w => {
+    const date = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+    return `
+      <div class="route-item" id="route-item-${w.id}" onclick="selectRoute(${w.id})">
+        <div class="route-dot" style="background:${w.color}"></div>
+        <div>
+          <div class="route-name">🐶 ${escHtml(w.dog)} — ${date}</div>
+          <div class="route-sub">${w.distance.toFixed(2)} km · ${formatDuration(w.duration)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectRoute(id) {
+  if (selectedRouteId) {
+    const prev = document.getElementById('route-item-' + selectedRouteId);
+    if (prev) prev.classList.remove('selected');
+  }
+  selectedRouteId = id;
+  const el = document.getElementById('route-item-' + id);
+  if (el) el.classList.add('selected');
+
+  const layer = routeLayers[id];
+  if (layer) routeMap.fitBounds(layer.getBounds(), { padding: [30, 30] });
+}
+
+// ── View walk modal ──────────────────────────────────────────────────────────
+let miniMap = null;
+
+function viewWalk(id) {
+  const walk = loadWalks().find(w => w.id === id);
+  if (!walk) return;
+
+  document.getElementById('view-title').textContent = `🐶 ${walk.dog}'s Walk`;
+  document.getElementById('view-info').textContent =
+    `${new Date(walk.date).toLocaleString()} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
+
+  document.getElementById('view-modal').classList.add('open');
+
+  setTimeout(() => {
+    if (miniMap) { miniMap.remove(); miniMap = null; }
+    miniMap = L.map('mini-map-modal');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(miniMap);
+
+    if (walk.coords.length > 1) {
+      const poly = L.polyline(walk.coords, { color: walk.color, weight: 4 }).addTo(miniMap);
+      miniMap.fitBounds(poly.getBounds(), { padding: [20, 20] });
+
+      L.circleMarker(walk.coords[0], {
+        radius: 7, color: '#4caf7d', fillColor: '#4caf7d', fillOpacity: 1
+      }).bindTooltip('Start').addTo(miniMap);
+      L.circleMarker(walk.coords[walk.coords.length-1], {
+        radius: 7, color: '#e05252', fillColor: '#e05252', fillOpacity: 1
+      }).bindTooltip('End').addTo(miniMap);
+    }
+    miniMap.invalidateSize();
+  }, 100);
+}
+
+function closeView() {
+  document.getElementById('view-modal').classList.remove('open');
+  if (miniMap) { miniMap.remove(); miniMap = null; }
+}
+
+// ── Share modal ───────────────────────────────────────────────────────────────
+let shareWalk = null;
+
+function openShare(id) {
+  shareWalk = loadWalks().find(w => w.id === id);
+  if (!shareWalk) return;
+
+  document.getElementById('share-walk-info').textContent =
+    `${shareWalk.dog} · ${shareWalk.distance.toFixed(2)} km · ${formatDuration(shareWalk.duration)}`;
+
+  const encoded = encodeRouteData(shareWalk);
+  const link = `${location.origin}${location.pathname}?route=${encoded}`;
+  document.getElementById('share-link-text').textContent = link;
+
+  document.getElementById('share-modal').classList.add('open');
+}
+
+function closeShare() {
+  document.getElementById('share-modal').classList.remove('open');
+}
+
+function encodeRouteData(walk) {
+  const data = {
+    dog: walk.dog,
+    date: walk.date,
+    duration: walk.duration,
+    distance: walk.distance,
+    coords: walk.coords.map(([lat, lng]) => [
+      Math.round(lat * 100000) / 100000,
+      Math.round(lng * 100000) / 100000
+    ])
+  };
+  return btoa(JSON.stringify(data));
+}
+
+function copyLink() {
+  const text = document.getElementById('share-link-text').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Link copied!')).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Link copied!');
+  });
+}
+
+function shareNative() {
+  const walk = shareWalk;
+  if (!walk) return;
+  const text = document.getElementById('share-link-text').textContent;
+  if (navigator.share) {
+    navigator.share({
+      title: `${walk.dog}'s Walk`,
+      text: `Check out ${walk.dog}'s walk — ${walk.distance.toFixed(2)} km in ${formatDuration(walk.duration)}!`,
+      url: text
+    }).catch(() => {});
+  } else {
+    copyLink();
+  }
+}
+
+function shareWhatsApp() {
+  const walk = shareWalk;
+  if (!walk) return;
+  const link = document.getElementById('share-link-text').textContent;
+  const msg = encodeURIComponent(`Check out ${walk.dog}'s walk 🐾 — ${walk.distance.toFixed(2)} km in ${formatDuration(walk.duration)}!\n${link}`);
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+
+function downloadGPX() {
+  const walk = shareWalk;
+  if (!walk || walk.coords.length === 0) return;
+
+  const pts = walk.coords.map(([lat, lng], i) =>
+    `    <trkpt lat="${lat}" lon="${lng}"><time>${new Date(walk.date).toISOString()}</time></trkpt>`
+  ).join('\n');
+
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="DogWalker">
+  <metadata><name>${walk.dog}'s Walk</name><time>${walk.date}</time></metadata>
+  <trk>
+    <name>${walk.dog}'s Walk</name>
+    <trkseg>
+${pts}
+    </trkseg>
+  </trk>
+</gpx>`;
+
+  const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${walk.dog.replace(/\s+/g,'_')}_walk_${walk.id}.gpx`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('GPX downloaded!');
+}
+
+// ── Shared route import ───────────────────────────────────────────────────────
+function checkSharedRoute() {
+  const params = new URLSearchParams(location.search);
+  const encoded = params.get('route');
+  if (!encoded) return;
+
+  try {
+    const data = JSON.parse(atob(encoded));
+    const existing = loadWalks();
+    const alreadySaved = existing.some(w => w.date === data.date && w.dog === data.dog);
+
+    if (!alreadySaved) {
+      const walk = {
+        id: Date.now(),
+        dog: data.dog,
+        date: data.date,
+        duration: data.duration,
+        distance: data.distance,
+        coords: data.coords,
+        color: randomColor()
+      };
+      existing.unshift(walk);
+      saveWalks(existing);
+      showToast(`Imported ${data.dog}'s walk!`);
+    } else {
+      showToast('Route already saved.');
+    }
+  } catch (e) {
+    showToast('Invalid shared route link.');
+  }
+
+  // Clean URL
+  history.replaceState({}, '', location.pathname);
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+initWalkMap();
+checkSharedRoute();
+
+// Ask for GPS permission proactively
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(() => {}, () => {});
+}
+</script>
+</body>
+</html>
