@@ -110,27 +110,47 @@
     }
 
     .sentence {
-      margin-bottom: 22px;
-      line-height: 2;
+      margin-bottom: 26px;
+      cursor: pointer;
+      border-radius: 16px;
+      padding: 6px 8px;
+      margin-left: -8px;
+      margin-right: -8px;
+      transition: background 0.15s;
     }
 
-    .hanzi {
+    .char-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      column-gap: 3px;
+      row-gap: 8px;
+    }
+
+    .char-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.15;
+    }
+
+    .hanzi-char {
       font-size: 1.7rem;
       font-weight: 500;
       color: #1e1612;
-      letter-spacing: 2px;
     }
 
-    .pinyin-row {
-      font-size: 1rem;
+    .pinyin-char {
+      display: none;
+      font-size: 0.8rem;
       color: #8b6f5c;
-      letter-spacing: 1.5px;
-      margin-top: 2px;
-      font-weight: 400;
-      background: #f9f3ed;
-      padding: 4px 14px;
-      border-radius: 40px;
-      display: inline-block;
+      font-weight: 500;
+      margin-top: 3px;
+      white-space: nowrap;
+    }
+
+    .sentence.show-pinyin .pinyin-char {
+      display: block;
     }
 
     .translation {
@@ -199,7 +219,7 @@
 
     @media (max-width: 600px) {
       .app { padding: 20px; }
-      .hanzi { font-size: 1.5rem; }
+      .hanzi-char { font-size: 1.5rem; }
       .story-btn { padding: 6px 16px; }
     }
   </style>
@@ -238,14 +258,14 @@
         title: '小马过河',
         origin: '🌟 中国寓言 ·  adapted',
         sentences: [
-          { hanzi: '小马要过河。', pinyin: 'Xiǎo mǎ yào guò hé。', translation: 'The little horse wants to cross the river.' },
-          { hanzi: '牛说:"水很浅。"', pinyin: 'Niú shuō:"Shuǐ hěn qiǎn。"', translation: 'The cow says: "The water is very shallow."' },
-          { hanzi: '松鼠说:"水很深!"', pinyin: 'Sōngshǔ shuō:"Shuǐ hěn shēn!"', translation: 'The squirrel says: "The water is very deep!"' },
-          { hanzi: '小马不知道怎么办。', pinyin: 'Xiǎo mǎ bù zhīdào zěnme bàn。', translation: 'The little horse doesn\'t know what to do.' },
-          { hanzi: '妈妈告诉小马:', pinyin: 'Māma gàosu xiǎo mǎ:', translation: 'Mother tells the little horse:' },
-          { hanzi: '"要自己试一试。"', pinyin: '"Yào zìjǐ shì yī shì。"', translation: '"You must try it yourself."' },
-          { hanzi: '小马小心地下了河。', pinyin: 'Xiǎo mǎ xiǎoxīn de xià le hé。', translation: 'The little horse carefully goes into the river.' },
-          { hanzi: '水不深也不浅。', pinyin: 'Shuǐ bù shēn yě bù qiǎn。', translation: 'The water is neither deep nor shallow.' }
+          { chars: [['小','xiǎo'],['马','mǎ'],['要','yào'],['过','guò'],['河','hé'],['。','']], translation: 'The little horse wants to cross the river.' },
+          { chars: [['牛','niú'],['说','shuō'],[':',''],['"',''],['水','shuǐ'],['很','hěn'],['浅','qiǎn'],['。',''],['"','']], translation: 'The cow says: "The water is very shallow."' },
+          { chars: [['松','sōng'],['鼠','shǔ'],['说','shuō'],[':',''],['"',''],['水','shuǐ'],['很','hěn'],['深','shēn'],['!',''],['"','']], translation: 'The squirrel says: "The water is very deep!"' },
+          { chars: [['小','xiǎo'],['马','mǎ'],['不','bù'],['知','zhī'],['道','dào'],['怎','zěn'],['么','me'],['办','bàn'],['。','']], translation: 'The little horse doesn\'t know what to do.' },
+          { chars: [['妈','mā'],['妈','ma'],['告','gào'],['诉','su'],['小','xiǎo'],['马','mǎ'],[':','']], translation: 'Mother tells the little horse:' },
+          { chars: [['"',''],['要','yào'],['自','zì'],['己','jǐ'],['试','shì'],['一','yī'],['试','shì'],['。',''],['"','']], translation: '"You must try it yourself."' },
+          { chars: [['小','xiǎo'],['马','mǎ'],['小','xiǎo'],['心','xīn'],['地','de'],['下','xià'],['了','le'],['河','hé'],['。','']], translation: 'The little horse carefully goes into the river.' },
+          { chars: [['水','shuǐ'],['不','bù'],['深','shēn'],['也','yě'],['不','bù'],['浅','qiǎn'],['。','']], translation: 'The water is neither deep nor shallow.' }
         ]
       },
       {
@@ -253,13 +273,13 @@
         title: '狐狸和葡萄',
         origin: '🦊 伊索寓言 · 改编',
         sentences: [
-          { hanzi: '狐狸看见葡萄架。', pinyin: 'Húlí kànjiàn pútáo jià。', translation: 'The fox sees the grapevine.' },
-          { hanzi: '葡萄很高,很大。', pinyin: 'Pútáo hěn gāo, hěn dà。', translation: 'The grapes are high and big.' },
-          { hanzi: '狐狸想吃葡萄。', pinyin: 'Húlí xiǎng chī pútáo。', translation: 'The fox wants to eat the grapes.' },
-          { hanzi: '它跳了很多次。', pinyin: 'Tā tiào le hěnduō cì。', translation: 'It jumps many times.' },
-          { hanzi: '还是够不到。', pinyin: 'Háishì gòu bù dào。', translation: 'Still can\'t reach them.' },
-          { hanzi: '狐狸说:"葡萄很酸。"', pinyin: 'Húlí shuō:"Pútáo hěn suān。"', translation: 'The fox says: "The grapes are sour."' },
-          { hanzi: '它就走开了。', pinyin: 'Tā jiù zǒu kāi le。', translation: 'So it walks away.' }
+          { chars: [['狐','hú'],['狸','lí'],['看','kàn'],['见','jiàn'],['葡','pú'],['萄','táo'],['架','jià'],['。','']], translation: 'The fox sees the grapevine.' },
+          { chars: [['葡','pú'],['萄','táo'],['很','hěn'],['高','gāo'],[',',''],['很','hěn'],['大','dà'],['。','']], translation: 'The grapes are high and big.' },
+          { chars: [['狐','hú'],['狸','lí'],['想','xiǎng'],['吃','chī'],['葡','pú'],['萄','táo'],['。','']], translation: 'The fox wants to eat the grapes.' },
+          { chars: [['它','tā'],['跳','tiào'],['了','le'],['很','hěn'],['多','duō'],['次','cì'],['。','']], translation: 'It jumps many times.' },
+          { chars: [['还','hái'],['是','shì'],['够','gòu'],['不','bù'],['到','dào'],['。','']], translation: 'Still can\'t reach them.' },
+          { chars: [['狐','hú'],['狸','lí'],['说','shuō'],[':',''],['"',''],['葡','pú'],['萄','táo'],['很','hěn'],['酸','suān'],['。',''],['"','']], translation: 'The fox says: "The grapes are sour."' },
+          { chars: [['它','tā'],['就','jiù'],['走','zǒu'],['开','kāi'],['了','le'],['。','']], translation: 'So it walks away.' }
         ]
       }
     ];
@@ -291,15 +311,18 @@
       // build sentences HTML
       let html = '';
       story.sentences.forEach((s, idx) => {
-        const pinyinDisplay = showPinyin ? s.pinyin : '';
-        const translationDisplay = showTranslation ? s.translation : '';
-        const isActive = (idx === currentSentenceIndex) ? 'active-sentence' : '';
+        const translationDisplay = showTranslation ? `<div class="translation">${s.translation}</div>` : '';
+        const charsHtml = s.chars.map(([hz, py]) => `
+          <div class="char-col">
+            <div class="hanzi-char">${hz}</div>
+            <div class="pinyin-char">${py || '&nbsp;'}</div>
+          </div>
+        `).join('');
 
         html += `
-          <div class="sentence" data-index="${idx}" data-hanzi="${s.hanzi}" data-pinyin="${s.pinyin}" data-translation="${s.translation}">
-            <div class="hanzi">${s.hanzi}</div>
-            ${pinyinDisplay ? `<div class="pinyin-row">${pinyinDisplay}</div>` : ''}
-            ${translationDisplay ? `<div class="translation">${translationDisplay}</div>` : ''}
+          <div class="sentence${showPinyin ? ' show-pinyin' : ''}" data-index="${idx}">
+            <div class="char-line">${charsHtml}</div>
+            ${translationDisplay}
           </div>
         `;
       });
@@ -310,10 +333,11 @@
       progressDisplay.textContent = `句子 ${currentSentenceIndex + 1} / ${total}`;
 
       // attach click-to-speak on each sentence
-      document.querySelectorAll('.sentence').forEach((el) => {
-        el.addEventListener('click', function(e) {
-          const hanzi = this.dataset.hanzi;
-          const pinyin = this.dataset.pinyin;
+      document.querySelectorAll('.sentence').forEach((el, idx) => {
+        el.addEventListener('click', function() {
+          const s = story.sentences[idx];
+          const hanzi = s.chars.map(c => c[0]).join('');
+          const pinyin = s.chars.map(c => c[1]).filter(Boolean).join(' ');
           const textToSpeak = showPinyin ? pinyin : hanzi; // read pinyin if visible, else hanzi
           if (textToSpeak && window.speechSynthesis) {
             const utterance = new SpeechSynthesisUtterance(textToSpeak);
@@ -322,13 +346,9 @@
             speechSynthesis.cancel(); // avoid overlapping
             speechSynthesis.speak(utterance);
           }
-          // update active index
-          const idx = parseInt(this.dataset.index);
-          if (!isNaN(idx)) {
-            currentSentenceIndex = idx;
-            updateActiveStyle();
-            updateProgress();
-          }
+          currentSentenceIndex = idx;
+          updateActiveStyle();
+          updateProgress();
         });
       });
 
@@ -339,9 +359,6 @@
     function updateActiveStyle() {
       document.querySelectorAll('.sentence').forEach((el, idx) => {
         el.style.background = (idx === currentSentenceIndex) ? '#f0e3da' : 'transparent';
-        el.style.borderRadius = (idx === currentSentenceIndex) ? '16px' : '0';
-        el.style.padding = (idx === currentSentenceIndex) ? '6px 12px' : '0';
-        el.style.transition = '0.15s';
       });
     }
 
