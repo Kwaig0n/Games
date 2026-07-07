@@ -136,6 +136,43 @@
 
     .dog-row input:focus { border-color: var(--primary); }
 
+    .dog-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      flex-shrink: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .dog-avatar:hover { border-color: var(--primary); }
+    .dog-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .walk-card-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      overflow: hidden;
+    }
+
+    .walk-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
     .btn-group { display: flex; gap: 12px; }
 
     .btn {
@@ -397,8 +434,15 @@
   </div>
 
   <div class="dog-row">
-    <label>Dog:</label>
-    <input id="dog-name" type="text" placeholder="Enter dog name" value="" />
+    <div class="dog-avatar" onclick="document.getElementById('avatar-input').click()" title="Tap to add photo">
+      <span id="avatar-placeholder">🐶</span>
+      <img id="avatar-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;" />
+    </div>
+    <input id="avatar-input" type="file" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)" />
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+      <label>Dog name</label>
+      <input id="dog-name" type="text" placeholder="Enter dog name" value="" oninput="loadAvatarForDog(this.value)" />
+    </div>
   </div>
 
   <span id="walk-status" class="status-badge idle">● Idle</span>
@@ -631,14 +675,22 @@ function renderLogs() {
     const dateStr = date.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
     const timeStr = date.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
     const dur = formatDuration(w.duration);
+    const avatarKey = 'dog-avatar-' + w.dog.trim().toLowerCase();
+    const avatarSrc = localStorage.getItem(avatarKey);
+    const avatarHtml = avatarSrc
+      ? `<img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`
+      : '🐶';
     return `
       <div class="walk-card">
         <div class="walk-card-header">
-          <div>
-            <div class="walk-card-title">🐶 ${escHtml(w.dog)}</div>
-            <div class="walk-card-date">${dateStr} at ${timeStr}</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="walk-card-avatar">${avatarHtml}</div>
+            <div>
+              <div class="walk-card-title">${escHtml(w.dog)}</div>
+              <div class="walk-card-date">${dateStr} at ${timeStr}</div>
+            </div>
           </div>
-          <div style="width:10px;height:10px;border-radius:50%;background:${w.color};margin-top:4px;"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:${w.color};margin-top:4px;flex-shrink:0;"></div>
         </div>
         <div class="walk-meta">
           <span><strong>${w.distance.toFixed(2)}</strong> km</span>
@@ -943,9 +995,48 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
+// ── Dog avatar ────────────────────────────────────────────────────────────────
+function avatarKey(name) {
+  return 'dog-avatar-' + (name || '').trim().toLowerCase();
+}
+
+function handleAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    const name = document.getElementById('dog-name').value.trim() || 'unknown';
+    localStorage.setItem(avatarKey(name), dataUrl);
+    setAvatarDisplay(dataUrl);
+    showToast('Photo saved for ' + (name || 'your dog') + '!');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function setAvatarDisplay(src) {
+  const placeholder = document.getElementById('avatar-placeholder');
+  const img = document.getElementById('avatar-img');
+  if (src) {
+    img.src = src;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    placeholder.style.display = 'block';
+  }
+}
+
+function loadAvatarForDog(name) {
+  const src = localStorage.getItem(avatarKey(name));
+  setAvatarDisplay(src || '');
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 initWalkMap();
 checkSharedRoute();
+loadAvatarForDog(document.getElementById('dog-name').value);
 
 // Ask for GPS permission proactively
 if (navigator.geolocation) {
