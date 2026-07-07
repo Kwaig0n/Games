@@ -399,6 +399,49 @@
     }
 
     .toast.show { opacity: 1; }
+
+    /* ── Places tab ── */
+    #places-map {
+      height: 300px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .category-badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .cat-park      { background: #e6f4ea; color: #2d7a3d; }
+    .cat-beach     { background: #fff3e0; color: #b06000; }
+    .cat-trail     { background: #fce4ec; color: #c62828; }
+    .cat-off-leash { background: #e8eaf6; color: #3949ab; }
+    .cat-forest    { background: #e0f2f1; color: #00695c; }
+    .cat-other     { background: #f3e5f5; color: #6a1b9a; }
+
+    .place-form-group { margin-bottom: 12px; }
+    .place-form-group label { font-size: 0.82rem; color: var(--muted); font-weight: 500; display: block; margin-bottom: 4px; }
+    .place-form-group input,
+    .place-form-group select,
+    .place-form-group textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      outline: none;
+      background: white;
+      font-family: inherit;
+    }
+    .place-form-group textarea { resize: none; }
+    .place-form-group input:focus,
+    .place-form-group select:focus,
+    .place-form-group textarea:focus { border-color: var(--primary); }
   </style>
 </head>
 <body>
@@ -412,6 +455,7 @@
   <button class="active" onclick="showTab('walk')">🗺 Walk</button>
   <button onclick="showTab('logs')">📋 Logs</button>
   <button onclick="showTab('routes')">📍 Routes</button>
+  <button onclick="showTab('places')">🌳 Places</button>
 </nav>
 
 <!-- ══════════════ WALK TAB ══════════════ -->
@@ -469,6 +513,16 @@
   <div id="route-list" class="route-list"></div>
 </div>
 
+<!-- ══════════════ PLACES TAB ══════════════ -->
+<div id="tab-places" class="tab">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div class="section-title" style="margin-bottom:0;">Dog Walking Areas</div>
+    <button class="btn-sm btn-view" style="padding:8px 16px;font-size:0.82rem;" onclick="startAddPlace()">+ Add Place</button>
+  </div>
+  <div id="places-map"></div>
+  <div id="places-list"></div>
+</div>
+
 <!-- ══════════════ SHARE MODAL ══════════════ -->
 <div class="modal-overlay" id="share-modal">
   <div class="modal">
@@ -504,6 +558,35 @@
   </div>
 </div>
 
+<!-- ══════════════ ADD PLACE MODAL ══════════════ -->
+<div class="modal-overlay" id="place-modal">
+  <div class="modal">
+    <h3>Add Walking Area</h3>
+    <p id="place-coords-text" style="font-family:monospace;font-size:0.78rem;color:var(--muted);margin-bottom:14px;"></p>
+    <div class="place-form-group">
+      <label>Place Name *</label>
+      <input id="place-name-input" type="text" placeholder="e.g. Riverside Park" />
+    </div>
+    <div class="place-form-group">
+      <label>Category</label>
+      <select id="place-category-input">
+        <option value="Park">🌳 Park</option>
+        <option value="Beach">🏖 Beach</option>
+        <option value="Trail">🥾 Trail</option>
+        <option value="Off-leash">🐕 Off-leash Area</option>
+        <option value="Forest">🌲 Forest</option>
+        <option value="Other">📍 Other</option>
+      </select>
+    </div>
+    <div class="place-form-group">
+      <label>Notes (optional)</label>
+      <textarea id="place-notes-input" rows="2" placeholder="e.g. Great for big dogs, parking on Main St"></textarea>
+    </div>
+    <button class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;" onclick="savePlace()">Save Place</button>
+    <button class="btn-close-modal" onclick="closePlaceModal()">Cancel</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -524,6 +607,7 @@ function showTab(name) {
 
   if (name === 'logs') renderLogs();
   if (name === 'routes') renderRoutes();
+  if (name === 'places') renderPlaces();
 }
 
 // ── Main walk map ────────────────────────────────────────────────────────────
@@ -950,6 +1034,149 @@ ${pts}
   a.click();
   URL.revokeObjectURL(url);
   showToast('GPX downloaded!');
+}
+
+// ── Places tab ────────────────────────────────────────────────────────────────
+let placesMap, placeMarkers = {};
+let pendingPlaceCoords = null;
+
+const CATEGORY_ICONS = { 'Park':'🌳', 'Beach':'🏖', 'Trail':'🥾', 'Off-leash':'🐕', 'Forest':'🌲', 'Other':'📍' };
+
+function loadPlaces() {
+  return JSON.parse(localStorage.getItem('dogplaces') || '[]');
+}
+function savePlaces(places) {
+  localStorage.setItem('dogplaces', JSON.stringify(places));
+}
+
+function renderPlaces() {
+  const places = loadPlaces();
+  const container = document.getElementById('places-list');
+
+  if (!placesMap) {
+    placesMap = L.map('places-map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(placesMap);
+  }
+
+  Object.values(placeMarkers).forEach(m => placesMap.removeLayer(m));
+  placeMarkers = {};
+
+  if (places.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🌳</div><p>No places saved yet.<br>Tap <strong>+ Add Place</strong> to mark a dog-friendly spot at your current location.</p></div>`;
+    placesMap.setView([0, 0], 2);
+    placesMap.invalidateSize();
+    return;
+  }
+
+  const bounds = [];
+  places.forEach(p => {
+    const icon = CATEGORY_ICONS[p.category] || '📍';
+    const marker = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({
+        html: `<div style="font-size:1.6rem;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));">${icon}</div>`,
+        iconSize: [32, 32], iconAnchor: [16, 16], className: ''
+      })
+    }).bindPopup(`<strong>${escHtml(p.name)}</strong><br><em>${p.category}</em>${p.notes ? '<br>' + escHtml(p.notes) : ''}`)
+      .addTo(placesMap);
+    placeMarkers[p.id] = marker;
+    bounds.push([p.lat, p.lng]);
+  });
+
+  if (bounds.length === 1) {
+    placesMap.setView(bounds[0], 15);
+  } else if (bounds.length > 1) {
+    placesMap.fitBounds(bounds, { padding: [30, 30] });
+  }
+  placesMap.invalidateSize();
+
+  container.innerHTML = places.map(p => {
+    const icon = CATEGORY_ICONS[p.category] || '📍';
+    const catClass = 'cat-' + p.category.toLowerCase().replace(/[^a-z]/g, '-');
+    return `
+      <div class="walk-card" style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:0.95rem;margin-bottom:6px;">${icon} ${escHtml(p.name)}</div>
+            <span class="category-badge ${catClass}">${p.category}</span>
+            ${p.notes ? `<div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">${escHtml(p.notes)}</div>` : ''}
+          </div>
+          <button class="btn-sm btn-delete" onclick="deletePlace(${p.id})">Delete</button>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-sm btn-view" onclick="getDirections(${p.lat},${p.lng})">📍 Directions</button>
+          <button class="btn-sm btn-share" onclick="focusPlace(${p.id})">🗺 View on Map</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function startAddPlace() {
+  if (!navigator.geolocation) {
+    showToast('Geolocation not supported.');
+    return;
+  }
+  showToast('Getting your location…');
+  navigator.geolocation.getCurrentPosition(pos => {
+    pendingPlaceCoords = [pos.coords.latitude, pos.coords.longitude];
+    document.getElementById('place-coords-text').textContent =
+      `📍 ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+    document.getElementById('place-name-input').value = '';
+    document.getElementById('place-category-input').value = 'Park';
+    document.getElementById('place-notes-input').value = '';
+    document.getElementById('place-modal').classList.add('open');
+  }, err => {
+    showToast('Could not get location: ' + err.message);
+  }, { enableHighAccuracy: true, timeout: 12000 });
+}
+
+function savePlace() {
+  const name = document.getElementById('place-name-input').value.trim();
+  if (!name) { showToast('Please enter a place name.'); return; }
+  if (!pendingPlaceCoords) { showToast('No location data.'); return; }
+
+  const place = {
+    id: Date.now(),
+    name,
+    category: document.getElementById('place-category-input').value,
+    notes: document.getElementById('place-notes-input').value.trim(),
+    lat: pendingPlaceCoords[0],
+    lng: pendingPlaceCoords[1]
+  };
+
+  const places = loadPlaces();
+  places.unshift(place);
+  savePlaces(places);
+  closePlaceModal();
+  renderPlaces();
+  showToast('Place saved!');
+}
+
+function closePlaceModal() {
+  document.getElementById('place-modal').classList.remove('open');
+  pendingPlaceCoords = null;
+}
+
+function deletePlace(id) {
+  const places = loadPlaces().filter(p => p.id !== id);
+  savePlaces(places);
+  renderPlaces();
+  showToast('Place removed.');
+}
+
+function getDirections(lat, lng) {
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+}
+
+function focusPlace(id) {
+  const marker = placeMarkers[id];
+  if (marker) {
+    placesMap.setView(marker.getLatLng(), 16);
+    marker.openPopup();
+    document.getElementById('places-map').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 // ── Shared route import ───────────────────────────────────────────────────────
