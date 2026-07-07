@@ -75,6 +75,74 @@
     .tab { display: none; padding: 20px; }
     .tab.active { display: block; }
 
+    /* ── Weather bar ── */
+    #weather-bar {
+      display: none;
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      align-items: center;
+      gap: 0;
+    }
+
+    .wx-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .wx-icon { font-size: 1.6rem; line-height: 1; }
+
+    .wx-temp {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .wx-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .wx-divider {
+      width: 1px;
+      height: 36px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    .wx-arrow {
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 0 6px;
+    }
+
+    #weather-unit-toggle {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 11px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      cursor: pointer;
+      margin-left: 8px;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    #weather-unit-toggle:active { background: var(--border); }
+
+    #weather-bar.loading .wx-temp { color: var(--muted); }
+
     /* ── Walk tab ── */
     #map {
       height: 340px;
@@ -600,6 +668,24 @@
 
 <!-- ══════════════ WALK TAB ══════════════ -->
 <div id="tab-walk" class="tab active">
+
+  <!-- Weather bar -->
+  <div id="weather-bar" class="loading">
+    <div class="wx-block">
+      <div class="wx-icon" id="wx-icon-now">🌡</div>
+      <div class="wx-temp" id="wx-temp-now">--</div>
+      <div class="wx-label">Now</div>
+    </div>
+    <div class="wx-divider"></div>
+    <div class="wx-arrow">›</div>
+    <div class="wx-block" id="wx-next-block">
+      <div class="wx-icon" id="wx-icon-next">🌡</div>
+      <div class="wx-temp" id="wx-temp-next">--</div>
+      <div class="wx-label">Next hour</div>
+    </div>
+    <button id="weather-unit-toggle" onclick="toggleWeatherUnit()">°F</button>
+  </div>
+
   <div id="map"></div>
 
   <div class="stats-row">
@@ -1667,15 +1753,87 @@ function loadAvatarForDog(name) {
   setAvatarDisplay(src || '');
 }
 
+// ── Weather ───────────────────────────────────────────────────────────────────
+let wxData = null;
+let wxUnit = localStorage.getItem('wxUnit') || 'C';
+
+const WMO = {
+  0:'☀️', 1:'🌤️', 2:'⛅️', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌧️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'🌨️', 73:'🌨️', 75:'❄️', 77:'🌨️',
+  80:'🌦️', 81:'🌧️', 82:'⛈️',
+  85:'🌨️', 86:'❄️',
+  95:'⛈️', 96:'⛈️', 99:'⛈️'
+};
+
+function wmoIcon(code) { return WMO[code] || '🌡️'; }
+
+function fmtTemp(c) {
+  return wxUnit === 'F' ? Math.round(c * 9/5 + 32) + '°F' : Math.round(c) + '°C';
+}
+
+function fetchWeather() {
+  if (!navigator.geolocation) return;
+  const bar = document.getElementById('weather-bar');
+  bar.style.display = 'flex';
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}&current=temperature_2m,weathercode&hourly=temperature_2m,weathercode&forecast_days=1&timezone=auto`;
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        const now = new Date();
+        const nextHourISO = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1)
+          .toISOString().slice(0, 13);
+        const idx = (data.hourly.time || []).findIndex(t => t.startsWith(nextHourISO));
+
+        wxData = {
+          curTemp: data.current.temperature_2m,
+          curCode: data.current.weathercode,
+          nxtTemp: idx >= 0 ? data.hourly.temperature_2m[idx] : null,
+          nxtCode: idx >= 0 ? data.hourly.weathercode[idx] : null,
+        };
+        bar.classList.remove('loading');
+        renderWeatherBar();
+      })
+      .catch(() => { bar.style.display = 'none'; });
+
+  }, () => { bar.style.display = 'none'; },
+    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+}
+
+function renderWeatherBar() {
+  if (!wxData) return;
+  document.getElementById('wx-icon-now').textContent = wmoIcon(wxData.curCode);
+  document.getElementById('wx-temp-now').textContent = fmtTemp(wxData.curTemp);
+
+  const nxtBlock = document.getElementById('wx-next-block');
+  if (wxData.nxtTemp !== null) {
+    document.getElementById('wx-icon-next').textContent = wmoIcon(wxData.nxtCode);
+    document.getElementById('wx-temp-next').textContent = fmtTemp(wxData.nxtTemp);
+    nxtBlock.style.display = 'flex';
+  } else {
+    nxtBlock.style.display = 'none';
+  }
+
+  document.getElementById('weather-unit-toggle').textContent = wxUnit === 'C' ? '°F' : '°C';
+}
+
+function toggleWeatherUnit() {
+  wxUnit = wxUnit === 'C' ? 'F' : 'C';
+  localStorage.setItem('wxUnit', wxUnit);
+  renderWeatherBar();
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 initWalkMap();
 checkSharedRoute();
 loadAvatarForDog(document.getElementById('dog-name').value);
-
-// Ask for GPS permission proactively
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(() => {}, () => {});
-}
+fetchWeather();
 </script>
 </body>
 </html>
