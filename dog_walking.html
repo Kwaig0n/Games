@@ -419,6 +419,9 @@
 <div id="tab-routes" class="tab">
   <div class="section-title">Saved Routes</div>
   <div id="route-map"></div>
+  <div id="route-share-bar" style="display:none;margin-bottom:12px;">
+    <button class="btn btn-start" style="padding:12px;font-size:0.9rem;" onclick="openShareSelected()">↗ Share Selected Route</button>
+  </div>
   <div id="route-list" class="route-list"></div>
 </div>
 
@@ -452,6 +455,7 @@
     <h3 id="view-title">Route</h3>
     <p id="view-info"></p>
     <div id="mini-map-modal"></div>
+    <button class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;font-size:0.9rem;" onclick="openShareFromView()">↗ Share this Route</button>
     <button class="btn-close-modal" onclick="closeView()">Close</button>
   </div>
 </div>
@@ -739,14 +743,22 @@ function selectRoute(id) {
 
   const layer = routeLayers[id];
   if (layer) routeMap.fitBounds(layer.getBounds(), { padding: [30, 30] });
+
+  document.getElementById('route-share-bar').style.display = 'block';
+}
+
+function openShareSelected() {
+  if (selectedRouteId) openShare(selectedRouteId);
 }
 
 // ── View walk modal ──────────────────────────────────────────────────────────
 let miniMap = null;
+let currentViewId = null;
 
 function viewWalk(id) {
   const walk = loadWalks().find(w => w.id === id);
   if (!walk) return;
+  currentViewId = id;
 
   document.getElementById('view-title').textContent = `🐶 ${walk.dog}'s Walk`;
   document.getElementById('view-info').textContent =
@@ -779,6 +791,12 @@ function viewWalk(id) {
 function closeView() {
   document.getElementById('view-modal').classList.remove('open');
   if (miniMap) { miniMap.remove(); miniMap = null; }
+}
+
+function openShareFromView() {
+  const id = currentViewId;
+  closeView();
+  if (id) openShare(id);
 }
 
 // ── Share modal ───────────────────────────────────────────────────────────────
