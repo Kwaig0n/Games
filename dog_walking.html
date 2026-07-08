@@ -2072,7 +2072,7 @@ function renderCommunityRoutes() {
   document.getElementById('cr-filter-bar').style.display = 'none';
 
   if (!navigator.geolocation) {
-    showCommunityRoutes(communityRoutesCache);
+    showCommunityRoutes(mergeWithLocalRoutes(communityRoutesCache));
     return;
   }
   navigator.geolocation.getCurrentPosition(
@@ -2082,8 +2082,8 @@ function renderCommunityRoutes() {
       showCommunityRoutes(routes);
     },
     () => {
-      // Location denied — show cache without proximity filter
-      showCommunityRoutes(communityRoutesCache.length ? communityRoutesCache : loadRoutes());
+      // Location denied — show cache + local routes
+      showCommunityRoutes(mergeWithLocalRoutes(communityRoutesCache));
     },
     { enableHighAccuracy: false, timeout: 6000, maximumAge: 300000 }
   );
@@ -2377,9 +2377,12 @@ function normalizeRemoteRoute(r) {
 }
 
 async function uploadRouteToDB(route) {
-  if (!sb) return;
+  if (!sb) {
+    showToast('Route saved locally. Add Supabase credentials to share to community.');
+    return;
+  }
   const startCoord = route.coords[0] || [0, 0];
-  const { error } = await sb.from('routes').insert({
+  const { data, error } = await sb.from('routes').insert({
     name: route.name,
     polyline: encodePolyline(route.coords),
     distance_km: route.distance,
@@ -2388,17 +2391,30 @@ async function uploadRouteToDB(route) {
     lat: startCoord[0],
     lng: startCoord[1],
     device_id: getDeviceId()
-  });
+  }).select('id').single();
   if (error) {
     console.warn('Supabase upload failed:', error.message);
     showToast('Saved locally — could not upload to community (check connection).');
   } else {
-    showToast('Route uploaded to community! 🎉');
+    // Mark local route as uploaded so it isn't shown twice in community
+    const routes = loadRoutes();
+    const idx = routes.findIndex(r => r.id === route.id);
+    if (idx !== -1) { routes[idx]._sbId = data.id; saveRoutes(routes); }
+    showToast('Route shared to community! 🎉');
   }
 }
 
+function mergeWithLocalRoutes(remoteRoutes) {
+  // Include local routes that haven't been uploaded (no _sbId) or
+  // whose _sbId isn't already in the remote set
+  const remoteSbIds = new Set(remoteRoutes.map(r => r.id));
+  const local = loadRoutes().filter(r => !r._sbId || !remoteSbIds.has(r._sbId));
+  return [...remoteRoutes, ...local];
+}
+
 async function fetchCommunityRoutes(lat, lng) {
-  if (!sb) return loadCommunityCache();
+  const localFallback = loadRoutes(); // always available, even offline
+  if (!sb) return localFallback;
   const latD = COMMUNITY_RADIUS_DEG;
   const lngD = COMMUNITY_RADIUS_DEG / Math.cos(lat * Math.PI / 180);
   const { data, error } = await sb
@@ -2410,12 +2426,12 @@ async function fetchCommunityRoutes(lat, lng) {
     .limit(30);
   if (error || !data) {
     console.warn('Supabase fetch failed:', error?.message);
-    return loadCommunityCache();
+    return mergeWithLocalRoutes(loadCommunityCache());
   }
-  const routes = data.map(normalizeRemoteRoute);
-  communityRoutesCache = routes;
-  saveCommunityCache(routes);
-  return routes;
+  const remoteRoutes = data.map(normalizeRemoteRoute);
+  communityRoutesCache = remoteRoutes;
+  saveCommunityCache(remoteRoutes);
+  return mergeWithLocalRoutes(remoteRoutes);
 }
 
 async function rateRouteInDB(routeId, stars) {
