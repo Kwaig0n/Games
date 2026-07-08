@@ -6,6 +6,7 @@
   <title>Dog Walker</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1195,6 +1196,25 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Supabase config ──────────────────────────────────────────────────────────
+// The anon key is safe to expose in client-side code when RLS is enabled on
+// every table. It only grants the privileges defined by your RLS policies.
+const SUPABASE_URL      = 'YOUR_SUPABASE_URL';      // e.g. https://xxxx.supabase.co
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Settings → API → anon public
+
+const sb = (typeof supabase !== 'undefined' && SUPABASE_URL !== 'YOUR_SUPABASE_URL')
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null; // null = offline / not configured; app falls back to localStorage
+
+function getDeviceId() {
+  let id = localStorage.getItem('dw_device_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('dw_device_id', id);
+  }
+  return id;
+}
+
 // ── Storage helpers ──────────────────────────────────────────────────────────
 function safeSetItem(key, value) {
   try {
@@ -1643,15 +1663,15 @@ function viewWalk(id) {
 }
 
 function viewRoute(id) {
-  const route = loadRoutes().find(r => r.id === id);
+  const route = findRouteById(id);
   if (!route) return;
+  const isRemote = route._source === 'remote';
   currentViewItem = { type: 'route', data: route };
 
   document.getElementById('view-title').textContent = `🗺️ ${route.name}`;
   document.getElementById('view-info').textContent =
     `${new Date(route.createdAt).toLocaleString()} · ${route.distance.toFixed(2)} km`;
 
-  // Show rating + tags section
   const meta = document.getElementById('view-route-meta');
   meta.style.display = '';
   document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(route);
@@ -1659,25 +1679,44 @@ function viewRoute(id) {
   const viewTagSet = new Set(route.tags || []);
   buildTagChips('view-route-tag-chips', viewTagSet, (tag, sel) => {
     if (sel) viewTagSet.add(tag); else viewTagSet.delete(tag);
-    const routes = loadRoutes();
-    const idx = routes.findIndex(r => r.id === id);
-    if (idx !== -1) {
-      routes[idx].tags = [...viewTagSet];
-      saveRoutes(routes);
-      currentViewItem.data = routes[idx];
+    const newTags = [...viewTagSet];
+    if (isRemote) {
+      // Update community cache locally; push to DB in background
+      const ci = communityRoutesCache.findIndex(r => r.id === id);
+      if (ci !== -1) { communityRoutesCache[ci].tags = newTags; saveCommunityCache(communityRoutesCache); currentViewItem.data = communityRoutesCache[ci]; }
+      updateRouteTagsInDB(id, newTags);
+    } else {
+      const routes = loadRoutes();
+      const idx = routes.findIndex(r => r.id === id);
+      if (idx !== -1) { routes[idx].tags = newTags; saveRoutes(routes); currentViewItem.data = routes[idx]; }
     }
   });
 
-  buildPawRow('view-route-paw-row', 0, n => {
-    const routes = loadRoutes();
-    const idx = routes.findIndex(r => r.id === id);
-    if (idx !== -1) {
-      routes[idx].ratings = routes[idx].ratings || [];
-      routes[idx].ratings.push({ stars: n, date: new Date().toISOString() });
-      saveRoutes(routes);
-      currentViewItem.data = routes[idx];
-      document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(routes[idx]);
-      showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
+  buildPawRow('view-route-paw-row', 0, async n => {
+    const entry = { stars: n, date: new Date().toISOString() };
+    if (isRemote) {
+      const ok = await rateRouteInDB(id, n);
+      if (ok) {
+        const ci = communityRoutesCache.findIndex(r => r.id === id);
+        if (ci !== -1) {
+          communityRoutesCache[ci].ratings.push(entry);
+          saveCommunityCache(communityRoutesCache);
+          currentViewItem.data = communityRoutesCache[ci];
+          document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(communityRoutesCache[ci]);
+        }
+        showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
+      }
+    } else {
+      const routes = loadRoutes();
+      const idx = routes.findIndex(r => r.id === id);
+      if (idx !== -1) {
+        routes[idx].ratings = routes[idx].ratings || [];
+        routes[idx].ratings.push(entry);
+        saveRoutes(routes);
+        currentViewItem.data = routes[idx];
+        document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(routes[idx]);
+        showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
+      }
     }
   });
 
@@ -2016,13 +2055,42 @@ function confirmCreateRoute() {
   renderLogs();
   if (document.getElementById('tab-places').classList.contains('active')) renderPlaces();
 
+  uploadRouteToDB(route); // fire-and-forget; toast on success/failure
+
   openRouteShare(route);
 }
 
 // ── Community Routes ──────────────────────────────────────────────────────────
 function renderCommunityRoutes() {
   const container = document.getElementById('community-routes-list');
-  const allRoutes = loadRoutes();
+
+  // Seed from cache immediately so the tab isn't blank while we fetch
+  communityRoutesCache = loadCommunityCache();
+
+  // Show loading state, then fetch fresh data from Supabase
+  container.innerHTML = `<p class="community-empty">📡 Loading routes near you…</p>`;
+  document.getElementById('cr-filter-bar').style.display = 'none';
+
+  if (!navigator.geolocation) {
+    showCommunityRoutes(communityRoutesCache);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      const routes = await fetchCommunityRoutes(lat, lng);
+      showCommunityRoutes(routes);
+    },
+    () => {
+      // Location denied — show cache without proximity filter
+      showCommunityRoutes(communityRoutesCache.length ? communityRoutesCache : loadRoutes());
+    },
+    { enableHighAccuracy: false, timeout: 6000, maximumAge: 300000 }
+  );
+}
+
+function showCommunityRoutes(allRoutes) {
+  const container = document.getElementById('community-routes-list');
 
   if (allRoutes.length === 0) {
     document.getElementById('cr-filter-bar').style.display = 'none';
@@ -2030,7 +2098,6 @@ function renderCommunityRoutes() {
     return;
   }
 
-  // Build/update filter UI
   const filterBar = document.getElementById('cr-filter-bar');
   filterBar.style.display = '';
   buildTagChips('cr-tag-filter-row', communityTagFilter, (tag, sel) => {
@@ -2038,7 +2105,7 @@ function renderCommunityRoutes() {
     applyRouteFilters(allRoutes);
   });
   const pawRow = document.getElementById('cr-paw-filter-row');
-  pawRow.innerHTML = ['Any',...[1,2,3,4,5].map(n => '🐾'.repeat(n))].map((label, i) =>
+  pawRow.innerHTML = ['Any', ...[1,2,3,4,5].map(n => '🐾'.repeat(n))].map((label, i) =>
     `<button class="cr-paw-btn${communityMinPaws === i ? ' selected' : ''}" data-min="${i}">${label}</button>`
   ).join('');
   pawRow.querySelectorAll('.cr-paw-btn').forEach(btn => {
@@ -2080,20 +2147,23 @@ function applyRouteFilters(allRoutes) {
     const chips = (r.tags || []).slice(0, 2).map(t =>
       `<span class="category-badge cat-trail" style="margin-right:3px;margin-bottom:3px;">${escHtml(t)}</span>`
     ).join('');
-    return `<div class="featured-card" data-route-id="${r.id}">
+    // data-route-id stores the id as-is (numeric or UUID string)
+    return `<div class="featured-card" data-route-id="${escHtml(String(r.id))}">
         <div class="featured-card-banner" style="background:#e8f0fe;">🗺️</div>
         <div class="featured-card-body">
           <div class="featured-card-name">${escHtml(r.name)}</div>
           <div class="featured-card-sub">${r.distance.toFixed(2)} km · ${date}</div>
-          ${pawHtml}
-          ${chips}
+          ${pawHtml}${chips}
         </div>
       </div>`;
   }).join('') + `</div>`;
 
   container.querySelectorAll('.featured-card').forEach(card => {
     card.addEventListener('click', () => {
-      const route = loadRoutes().find(r => r.id === parseInt(card.dataset.routeId, 10));
+      const rawId = card.dataset.routeId;
+      // Try numeric (local) then string (UUID remote)
+      const id = isNaN(rawId) ? rawId : parseInt(rawId, 10);
+      const route = findRouteById(id);
       if (route) viewRoute(route.id);
     });
   });
@@ -2274,6 +2344,107 @@ function loadRoutes() {
 }
 function saveRoutes(routes) {
   return safeSetItem('dogroutes', JSON.stringify(routes));
+}
+
+// ── Supabase community-routes helpers ─────────────────────────────────────────
+// Bounding box for ~25 km radius (lat degrees; lng scaled by cos(lat))
+const COMMUNITY_RADIUS_DEG = 0.225;
+
+let communityRoutesCache = []; // in-memory; also persisted to localStorage
+
+function saveCommunityCache(routes) {
+  safeSetItem('dogroutes_community', JSON.stringify(routes));
+}
+function loadCommunityCache() {
+  return JSON.parse(localStorage.getItem('dogroutes_community') || '[]');
+}
+
+function normalizeRemoteRoute(r) {
+  const ratings = (r.route_ratings || []).map(rr => ({ stars: rr.stars, date: rr.created_at }));
+  return {
+    id: r.id,            // UUID string
+    name: r.name,
+    coords: decodePolyline(r.polyline),
+    distance: r.distance_km,
+    createdAt: r.created_at,
+    tags: r.tags || [],
+    notes: r.notes || '',
+    ratings,
+    _source: 'remote',
+    _lat: r.lat,
+    _lng: r.lng
+  };
+}
+
+async function uploadRouteToDB(route) {
+  if (!sb) return;
+  const startCoord = route.coords[0] || [0, 0];
+  const { error } = await sb.from('routes').insert({
+    name: route.name,
+    polyline: encodePolyline(route.coords),
+    distance_km: route.distance,
+    tags: route.tags || [],
+    notes: route.notes || '',
+    lat: startCoord[0],
+    lng: startCoord[1],
+    device_id: getDeviceId()
+  });
+  if (error) {
+    console.warn('Supabase upload failed:', error.message);
+    showToast('Saved locally — could not upload to community (check connection).');
+  } else {
+    showToast('Route uploaded to community! 🎉');
+  }
+}
+
+async function fetchCommunityRoutes(lat, lng) {
+  if (!sb) return loadCommunityCache();
+  const latD = COMMUNITY_RADIUS_DEG;
+  const lngD = COMMUNITY_RADIUS_DEG / Math.cos(lat * Math.PI / 180);
+  const { data, error } = await sb
+    .from('routes')
+    .select('*, route_ratings(stars, created_at)')
+    .gte('lat', lat - latD).lte('lat', lat + latD)
+    .gte('lng', lng - lngD).lte('lng', lng + lngD)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error || !data) {
+    console.warn('Supabase fetch failed:', error?.message);
+    return loadCommunityCache();
+  }
+  const routes = data.map(normalizeRemoteRoute);
+  communityRoutesCache = routes;
+  saveCommunityCache(routes);
+  return routes;
+}
+
+async function rateRouteInDB(routeId, stars) {
+  if (!sb) return false;
+  const { error } = await sb.from('route_ratings').insert({
+    route_id: routeId,
+    stars,
+    tags: [],
+    device_id: getDeviceId()
+  });
+  if (error) {
+    console.warn('Rating insert failed:', error.message);
+    showToast('Could not save rating to server — try again later.');
+    return false;
+  }
+  return true;
+}
+
+async function updateRouteTagsInDB(routeId, tags) {
+  if (!sb) return;
+  const { error } = await sb.from('routes').update({ tags }).eq('id', routeId);
+  if (error) console.warn('Tag update failed:', error.message);
+}
+
+function findRouteById(id) {
+  // Check local user routes first (numeric id), then community cache (UUID string)
+  const local = loadRoutes().find(r => r.id === id || String(r.id) === String(id));
+  if (local) return local;
+  return communityRoutesCache.find(r => r.id === id);
 }
 
 function renderPlaces() {
