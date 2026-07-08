@@ -878,9 +878,9 @@
     <button id="weather-unit-toggle" onclick="toggleWeatherUnit()">°F</button>
   </div>
 
-  <div id="map"></div>
+  <div id="map" style="display:none;"></div>
 
-  <div class="stats-row">
+  <div class="stats-row" id="walk-stats" style="display:none;">
     <div class="stat-card">
       <div class="val" id="stat-time">00:00</div>
       <div class="lbl">Duration</div>
@@ -1144,6 +1144,11 @@ async function startWalk() {
     showToast('Keep your screen on during the walk so GPS tracking isn\'t interrupted.');
   }
 
+  // Show map and stats; init Leaflet the first time (can't render into a hidden div)
+  document.getElementById('map').style.display = '';
+  document.getElementById('walk-stats').style.display = '';
+  if (!walkMap) initWalkMap();
+
   isWalking = true;
   walkCoords = [];
   walkStart = Date.now();
@@ -1191,6 +1196,8 @@ function stopWalk() {
 
   if (walkCoords.length < 2) {
     showToast('Not enough GPS points to save this walk.');
+    document.getElementById('map').style.display = 'none';
+    document.getElementById('walk-stats').style.display = 'none';
     return;
   }
 
@@ -1214,11 +1221,12 @@ function stopWalk() {
     unsavedWalk = null;
     showToast('Walk saved!');
   } else {
-    // Quota exceeded — safeSetItem already toasted. Keep the walk object alive
-    // so it isn't silently discarded; the caller can retry after freeing space.
     unsavedWalk = walk;
     showToast('Walk recorded but not saved — free up space and try again.');
   }
+
+  document.getElementById('map').style.display = 'none';
+  document.getElementById('walk-stats').style.display = 'none';
 }
 
 function onPosition(pos) {
@@ -2346,7 +2354,6 @@ function toggleWeatherUnit() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-initWalkMap();
 checkSharedRoute();
 renderGroupDropdown();
 fetchWeather();
