@@ -878,6 +878,9 @@
     <button id="weather-unit-toggle" onclick="toggleWeatherUnit()">°F</button>
   </div>
 
+  <div id="welcome-banner" style="text-align:center;padding:10px 4px 4px;font-size:0.88rem;color:var(--muted);font-weight:500;">🐾 Just add your pup and start walking!</div>
+  <br>
+
   <div id="map" style="display:none;"></div>
 
   <div class="stats-row" id="walk-stats" style="display:none;">
@@ -1009,19 +1012,25 @@
   </div>
 </div>
 
-<!-- ══════════════ SUBMIT ROUTE MODAL ══════════════ -->
-<div class="modal-overlay" id="submit-modal">
+<!-- ══════════════ CREATE ROUTE MODAL ══════════════ -->
+<div class="modal-overlay" id="create-route-modal">
   <div class="modal">
-    <h3>🌐 Route Submitted!</h3>
-    <p style="margin-bottom:12px;">Your route is now in the Community Routes section. Share the link so others can import it.</p>
-    <div class="share-link-box" id="submit-link-text"></div>
-    <div class="share-options" style="grid-template-columns:1fr 1fr;">
-      <div class="share-opt" onclick="copySubmitLink()"><div class="ico">📋</div>Copy Link</div>
-      <div class="share-opt" onclick="submitShareNative()"><div class="ico">↗️</div>Share</div>
-      <div class="share-opt" onclick="submitShareWhatsApp()"><div class="ico">💬</div>WhatsApp</div>
-      <div class="share-opt" onclick="closeSubmitModal()"><div class="ico">✅</div>Done</div>
+    <h3>📍 Save as Route</h3>
+    <p>Give this route a name so you can share and reuse it.</p>
+    <div class="place-form-group">
+      <label>Route Name *</label>
+      <input id="route-name-input" type="text" placeholder="e.g. Kings Park Loop" style="font-size:1rem;" />
     </div>
-    <button class="btn-close-modal" style="margin-top:12px;" onclick="closeSubmitModal()">Close</button>
+    <div class="place-form-group">
+      <label>Tags (optional, comma-separated)</label>
+      <input id="route-tags-input" type="text" placeholder="e.g. hilly, off-leash, shady" style="font-size:1rem;" />
+    </div>
+    <div class="place-form-group">
+      <label>Notes (optional)</label>
+      <textarea id="route-notes-input" rows="2" placeholder="e.g. Great morning walk, bring water" style="font-size:1rem;"></textarea>
+    </div>
+    <button class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;" onclick="confirmCreateRoute()">Create Route</button>
+    <button class="btn-close-modal" onclick="closeCreateRouteModal()">Cancel</button>
   </div>
 </div>
 
@@ -1345,7 +1354,7 @@ function renderLogs() {
         <div class="walk-actions">
           <button class="btn-sm btn-view" onclick="viewWalk(${w.id})">View Route</button>
           <button class="btn-sm btn-share" onclick="openShare(${w.id})">Share</button>
-          <button class="btn-sm btn-submit${w.submitted ? ' done' : ''}" onclick="submitRoute(${w.id})">${w.submitted ? '✓ Submitted' : '↑ Submit'}</button>
+          <button class="btn-sm btn-submit${w.routeId ? ' done' : ''}" onclick="openCreateRouteModal(${w.id})">${w.routeId ? '✓ Route' : '📍 Route'}</button>
           <button class="btn-sm btn-delete" onclick="deleteWalk(${w.id})">Delete</button>
         </div>
       </div>
@@ -1464,21 +1473,38 @@ function openShareSelected() {
   if (selectedRouteId) openShare(selectedRouteId);
 }
 
-// ── View walk modal ──────────────────────────────────────────────────────────
+// ── View walk / route modal ───────────────────────────────────────────────────
 let miniMap = null;
-let currentViewId = null;
+let currentViewItem = null; // { type: 'walk'|'route', data: ... }
 
 function viewWalk(id) {
   const walk = loadWalks().find(w => w.id === id);
   if (!walk) return;
-  currentViewId = id;
+  currentViewItem = { type: 'walk', data: walk };
 
   document.getElementById('view-title').textContent = `🐶 ${walk.dog}'s Walk`;
   document.getElementById('view-info').textContent =
     `${new Date(walk.date).toLocaleString()} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
 
   document.getElementById('view-modal').classList.add('open');
+  openMiniMap(walk.coords, walk.color || '#4a90d9');
+}
 
+function viewRoute(id) {
+  const route = loadRoutes().find(r => r.id === id);
+  if (!route) return;
+  currentViewItem = { type: 'route', data: route };
+
+  document.getElementById('view-title').textContent = `🗺️ ${route.name}`;
+  const tags = route.tags && route.tags.length ? ` · ${route.tags.join(', ')}` : '';
+  document.getElementById('view-info').textContent =
+    `${new Date(route.createdAt).toLocaleString()} · ${route.distance.toFixed(2)} km${tags}`;
+
+  document.getElementById('view-modal').classList.add('open');
+  openMiniMap(route.coords, '#4a90d9');
+}
+
+function openMiniMap(coords, color) {
   setTimeout(() => {
     if (miniMap) { miniMap.remove(); miniMap = null; }
     miniMap = L.map('mini-map-modal');
@@ -1486,14 +1512,13 @@ function viewWalk(id) {
       attribution: '© OpenStreetMap'
     }).addTo(miniMap);
 
-    if (walk.coords.length > 1) {
-      const poly = L.polyline(walk.coords, { color: walk.color, weight: 4 }).addTo(miniMap);
+    if (coords.length > 1) {
+      const poly = L.polyline(coords, { color, weight: 4 }).addTo(miniMap);
       miniMap.fitBounds(poly.getBounds(), { padding: [20, 20] });
-
-      L.circleMarker(walk.coords[0], {
+      L.circleMarker(coords[0], {
         radius: 7, color: '#4caf7d', fillColor: '#4caf7d', fillOpacity: 1
       }).bindTooltip('Start').addTo(miniMap);
-      L.circleMarker(walk.coords[walk.coords.length-1], {
+      L.circleMarker(coords[coords.length - 1], {
         radius: 7, color: '#e05252', fillColor: '#e05252', fillOpacity: 1
       }).bindTooltip('End').addTo(miniMap);
     }
@@ -1504,25 +1529,45 @@ function viewWalk(id) {
 function closeView() {
   document.getElementById('view-modal').classList.remove('open');
   if (miniMap) { miniMap.remove(); miniMap = null; }
+  currentViewItem = null;
 }
 
 function openShareFromView() {
-  const id = currentViewId;
+  const item = currentViewItem;
   closeView();
-  if (id) openShare(id);
+  if (!item) return;
+  if (item.type === 'route') {
+    openRouteShare(item.data);
+  } else {
+    openShare(item.data.id);
+  }
 }
 
 // ── Share modal ───────────────────────────────────────────────────────────────
-let shareWalk = null;
+let shareItem = null;
 
 function openShare(id) {
-  shareWalk = loadWalks().find(w => w.id === id);
-  if (!shareWalk) return;
+  const walk = loadWalks().find(w => w.id === id);
+  if (!walk) return;
+  shareItem = { ...walk, _type: 'walk' };
 
   document.getElementById('share-walk-info').textContent =
-    `${shareWalk.dog} · ${shareWalk.distance.toFixed(2)} km · ${formatDuration(shareWalk.duration)}`;
+    `${walk.dog} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
 
-  const encoded = encodeRouteData(shareWalk);
+  const encoded = encodeRouteData(shareItem);
+  const link = `${location.origin}${location.pathname}?route=${encoded}`;
+  document.getElementById('share-link-text').textContent = link;
+
+  document.getElementById('share-modal').classList.add('open');
+}
+
+function openRouteShare(route) {
+  shareItem = { ...route, _type: 'route' };
+
+  document.getElementById('share-walk-info').textContent =
+    `${route.name} · ${route.distance.toFixed(2)} km${route.tags && route.tags.length ? ' · ' + route.tags.join(', ') : ''}`;
+
+  const encoded = encodeRouteData(shareItem);
   const link = `${location.origin}${location.pathname}?route=${encoded}`;
   document.getElementById('share-link-text').textContent = link;
 
@@ -1533,18 +1578,29 @@ function closeShare() {
   document.getElementById('share-modal').classList.remove('open');
 }
 
-function encodeRouteData(walk) {
-  const data = {
-    dog: walk.dog,
-    date: walk.date,
-    duration: walk.duration,
-    distance: walk.distance,
-    coords: walk.coords.map(([lat, lng]) => [
-      Math.round(lat * 100000) / 100000,
-      Math.round(lng * 100000) / 100000
-    ])
-  };
-  return btoa(JSON.stringify(data));
+function encodeRouteData(item) {
+  const roundedCoords = item.coords.map(([lat, lng]) => [
+    Math.round(lat * 100000) / 100000,
+    Math.round(lng * 100000) / 100000
+  ]);
+  if (item._type === 'route') {
+    return btoa(JSON.stringify({
+      type: 'route',
+      name: item.name,
+      distance: item.distance,
+      tags: item.tags || [],
+      createdAt: item.createdAt,
+      coords: roundedCoords
+    }));
+  }
+  return btoa(JSON.stringify({
+    type: 'walk',
+    dog: item.dog,
+    date: item.date,
+    duration: item.duration,
+    distance: item.distance,
+    coords: roundedCoords
+  }));
 }
 
 function copyLink() {
@@ -1562,42 +1618,46 @@ function copyLink() {
 }
 
 function shareNative() {
-  const walk = shareWalk;
-  if (!walk) return;
+  const item = shareItem;
+  if (!item) return;
   const text = document.getElementById('share-link-text').textContent;
   if (navigator.share) {
-    navigator.share({
-      title: `${walk.dog}'s Walk`,
-      text: `Check out ${walk.dog}'s walk — ${walk.distance.toFixed(2)} km in ${formatDuration(walk.duration)}!`,
-      url: text
-    }).catch(() => {});
+    const title = item._type === 'route' ? item.name : `${item.dog}'s Walk`;
+    const desc = item._type === 'route'
+      ? `Check out this route: ${item.name} — ${item.distance.toFixed(2)} km!`
+      : `Check out ${item.dog}'s walk — ${item.distance.toFixed(2)} km in ${formatDuration(item.duration)}!`;
+    navigator.share({ title, text: desc, url: text }).catch(() => {});
   } else {
     copyLink();
   }
 }
 
 function shareWhatsApp() {
-  const walk = shareWalk;
-  if (!walk) return;
+  const item = shareItem;
+  if (!item) return;
   const link = document.getElementById('share-link-text').textContent;
-  const msg = encodeURIComponent(`Check out ${walk.dog}'s walk 🐾 — ${walk.distance.toFixed(2)} km in ${formatDuration(walk.duration)}!\n${link}`);
+  const msg = item._type === 'route'
+    ? encodeURIComponent(`🗺️ Check out this route: ${item.name} — ${item.distance.toFixed(2)} km!\n${link}`)
+    : encodeURIComponent(`Check out ${item.dog}'s walk 🐾 — ${item.distance.toFixed(2)} km in ${formatDuration(item.duration)}!\n${link}`);
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
 function downloadGPX() {
-  const walk = shareWalk;
-  if (!walk || walk.coords.length === 0) return;
+  const item = shareItem;
+  if (!item || item.coords.length === 0) return;
 
-  const pts = walk.coords.map(([lat, lng]) =>
-    `    <trkpt lat="${lat}" lon="${lng}"><time>${new Date(walk.date).toISOString()}</time></trkpt>`
+  const name = item._type === 'route' ? item.name : `${item.dog}'s Walk`;
+  const dateStr = item._type === 'route' ? item.createdAt : item.date;
+  const pts = item.coords.map(([lat, lng]) =>
+    `    <trkpt lat="${lat}" lon="${lng}"><time>${new Date(dateStr).toISOString()}</time></trkpt>`
   ).join('\n');
 
-  const dogXml = escXml(walk.dog);
+  const nameXml = escXml(name);
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="DogWalker">
-  <metadata><name>${dogXml}&apos;s Walk</name><time>${walk.date}</time></metadata>
+  <metadata><name>${nameXml}</name><time>${dateStr}</time></metadata>
   <trk>
-    <name>${dogXml}&apos;s Walk</name>
+    <name>${nameXml}</name>
     <trkseg>
 ${pts}
     </trkseg>
@@ -1608,7 +1668,7 @@ ${pts}
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${walk.dog.replace(/\s+/g,'_')}_walk_${walk.id}.gpx`;
+  a.download = `${name.replace(/\s+/g,'_')}_${item.id || Date.now()}.gpx`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('GPX downloaded!');
@@ -1618,84 +1678,95 @@ ${pts}
 let placesMap, placeMarkers = {};
 let pendingPlaceCoords = null;
 
-// ── Submit Route ─────────────────────────────────────────────────────────────
-let submitWalk = null;
+// ── Create Route from Walk ────────────────────────────────────────────────────
+let pendingRouteWalkId = null;
 
-function submitRoute(id) {
+function openCreateRouteModal(id) {
+  const walk = loadWalks().find(w => w.id === id);
+  if (!walk) return;
+  if (walk.routeId) { showToast('Route already created!'); return; }
+  pendingRouteWalkId = id;
+  document.getElementById('route-name-input').value = walk.dog + '\'s Walk';
+  document.getElementById('route-tags-input').value = '';
+  document.getElementById('route-notes-input').value = '';
+  document.getElementById('create-route-modal').classList.add('open');
+}
+
+function closeCreateRouteModal() {
+  document.getElementById('create-route-modal').classList.remove('open');
+  pendingRouteWalkId = null;
+}
+
+function confirmCreateRoute() {
+  const name = document.getElementById('route-name-input').value.trim();
+  if (!name) { showToast('Enter a route name.'); return; }
+
+  const tagsRaw = document.getElementById('route-tags-input').value.trim();
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const notes = document.getElementById('route-notes-input').value.trim();
+
   const walks = loadWalks();
-  const idx = walks.findIndex(w => w.id === id);
-  if (idx === -1) return;
-  if (walks[idx].submitted) { showToast('Already submitted!'); return; }
-  walks[idx].submitted = true;
+  const walkIdx = walks.findIndex(w => w.id === pendingRouteWalkId);
+  if (walkIdx === -1) { closeCreateRouteModal(); return; }
+
+  const walk = walks[walkIdx];
+  const routeId = Date.now();
+  const route = {
+    id: routeId,
+    name,
+    createdFrom: walk.id,
+    coords: walk.coords,
+    distance: walk.distance,
+    createdAt: new Date().toISOString(),
+    tags,
+    notes,
+    ratings: []
+  };
+
+  const routes = loadRoutes();
+  routes.unshift(route);
+  if (!saveRoutes(routes)) { closeCreateRouteModal(); return; }
+
+  walks[walkIdx].routeId = routeId;
   saveWalks(walks);
+
+  closeCreateRouteModal();
   renderLogs();
   if (document.getElementById('tab-places').classList.contains('active')) renderPlaces();
 
-  submitWalk = walks[idx];
-  const encoded = encodeRouteData(submitWalk);
-  const link = `${location.origin}${location.pathname}?route=${encoded}`;
-  document.getElementById('submit-link-text').textContent = link;
-  document.getElementById('submit-modal').classList.add('open');
-}
-
-function closeSubmitModal() {
-  document.getElementById('submit-modal').classList.remove('open');
-}
-
-function copySubmitLink() {
-  const text = document.getElementById('submit-link-text').textContent;
-  navigator.clipboard.writeText(text).then(() => showToast('Link copied!')).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    showToast('Link copied!');
-  });
-}
-
-function submitShareNative() {
-  if (!submitWalk) return;
-  const link = document.getElementById('submit-link-text').textContent;
-  if (navigator.share) {
-    navigator.share({ title: `${submitWalk.dog}'s Walk`, text: `Check out this dog walk route!`, url: link }).catch(() => {});
-  } else { copySubmitLink(); }
-}
-
-function submitShareWhatsApp() {
-  if (!submitWalk) return;
-  const link = document.getElementById('submit-link-text').textContent;
-  const msg = encodeURIComponent(`🐾 Check out ${submitWalk.dog}'s walk — ${submitWalk.distance.toFixed(2)} km!\n${link}`);
-  window.open(`https://wa.me/?text=${msg}`, '_blank');
+  openRouteShare(route);
 }
 
 // ── Community Routes ──────────────────────────────────────────────────────────
 function renderCommunityRoutes() {
   const container = document.getElementById('community-routes-list');
-  const walks = loadWalks().filter(w => w.submitted);
+  const routes = loadRoutes();
 
-  if (walks.length === 0) {
-    container.innerHTML = `<p class="community-empty">No community routes yet — submit your walks from the <strong>Logs</strong> tab to share them here!</p>`;
+  if (routes.length === 0) {
+    container.innerHTML = `<p class="community-empty">No community routes yet — tap <strong>📍 Route</strong> on a walk in the <strong>Logs</strong> tab to create and share one!</p>`;
     return;
   }
 
-  container.innerHTML = `<div class="featured-scroll">` + walks.map(w => {
-    const date = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
-    const icon = CATEGORY_ICONS['Trail'] || '🐾';
-    const avatarSrc = getAvatarForGroupName(w.dog);
-    const banner = avatarSrc
-      ? `<img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;" />`
-      : `<span style="font-size:2.4rem;">🐾</span>`;
-    return `
-      <div class="featured-card" onclick="viewWalk(${w.id})">
-        <div class="featured-card-banner" style="background:#e8f0fe;overflow:hidden;">${banner}</div>
+  container.innerHTML = `<div class="featured-scroll">` + routes.map(r => {
+    const date = new Date(r.createdAt).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+    const tagLabel = r.tags && r.tags.length ? escHtml(r.tags[0]) : 'Route';
+    return `<div class="featured-card" data-route-id="${r.id}">
+        <div class="featured-card-banner" style="background:#e8f0fe;">🗺️</div>
         <div class="featured-card-body">
-          <div class="featured-card-name">${escHtml(w.dog)}'s Walk</div>
-          <div class="featured-card-sub">${w.distance.toFixed(2)} km · ${formatDuration(w.duration)}</div>
+          <div class="featured-card-name">${escHtml(r.name)}</div>
+          <div class="featured-card-sub">${r.distance.toFixed(2)} km</div>
           <div class="featured-card-sub">${date}</div>
-          <span class="category-badge cat-trail">Submitted</span>
+          <span class="category-badge cat-trail">${tagLabel}</span>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('') + `</div>`;
+
+  container.querySelectorAll('.featured-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const route = loadRoutes().find(r => r.id === parseInt(card.dataset.routeId, 10));
+      if (route) viewRoute(route.id);
+    });
+  });
 }
 
 // ── Near Me ───────────────────────────────────────────────────────────────────
@@ -1714,7 +1785,7 @@ function findNearbyRoutes() {
 
     const nearby = walks
       .map(w => {
-        const minDist = Math.min(...w.coords.map(c => haversine([lat, lng], c)));
+        const minDist = w.coords.reduce((min, c) => { const d = haversine([lat, lng], c); return d < min ? d : min; }, Infinity);
         return { walk: w, dist: minDist };
       })
       .filter(x => x.dist <= RADIUS_KM)
@@ -1868,6 +1939,13 @@ function savePlaces(places) {
   return safeSetItem('dogplaces', JSON.stringify(places));
 }
 
+function loadRoutes() {
+  return JSON.parse(localStorage.getItem('dogroutes') || '[]');
+}
+function saveRoutes(routes) {
+  return safeSetItem('dogroutes', JSON.stringify(routes));
+}
+
 function renderPlaces() {
   renderFeaturedAreas();
   renderCommunityRoutes();
@@ -2010,30 +2088,52 @@ function checkSharedRoute() {
 
   try {
     const data = JSON.parse(atob(encoded));
-    const existing = loadWalks();
-    const alreadySaved = existing.some(w => w.date === data.date && w.dog === data.dog);
 
-    if (!alreadySaved) {
-      const walk = {
-        id: Date.now(),
-        dog: data.dog,
-        date: data.date,
-        duration: data.duration,
-        distance: data.distance,
-        coords: data.coords,
-        color: randomColor()
-      };
-      existing.unshift(walk);
-      saveWalks(existing);
-      showToast(`Imported ${data.dog}'s walk!`);
+    if (data.type === 'route') {
+      const routes = loadRoutes();
+      const alreadySaved = routes.some(r => r.name === data.name && r.createdAt === data.createdAt);
+      if (!alreadySaved) {
+        routes.unshift({
+          id: Date.now(),
+          name: data.name,
+          createdFrom: null,
+          coords: data.coords,
+          distance: data.distance,
+          createdAt: data.createdAt,
+          tags: data.tags || [],
+          notes: '',
+          ratings: []
+        });
+        saveRoutes(routes);
+        showToast(`Imported route: ${data.name}!`);
+      } else {
+        showToast('Route already saved.');
+      }
     } else {
-      showToast('Route already saved.');
+      // Legacy walk or type:'walk' import
+      const dog = data.dog || 'Unknown Dog';
+      const existing = loadWalks();
+      const alreadySaved = existing.some(w => w.date === data.date && w.dog === dog);
+      if (!alreadySaved) {
+        existing.unshift({
+          id: Date.now(),
+          dog,
+          date: data.date,
+          duration: data.duration,
+          distance: data.distance,
+          coords: data.coords,
+          color: randomColor()
+        });
+        saveWalks(existing);
+        showToast(`Imported ${dog}'s walk!`);
+      } else {
+        showToast('Route already saved.');
+      }
     }
   } catch (e) {
     showToast('Invalid shared route link.');
   }
 
-  // Clean URL
   history.replaceState({}, '', location.pathname);
 }
 
@@ -2070,6 +2170,8 @@ function getAvatarForGroupName(groupName) {
 
 function renderGroupDropdown() {
   const groups = loadGroups();
+  const banner = document.getElementById('welcome-banner');
+  if (banner) banner.style.display = groups.length > 0 ? 'none' : '';
   const sel = document.getElementById('group-select');
   const currentId = selectedGroup ? selectedGroup.id : null;
   sel.innerHTML = '<option value="">Select dogs...</option>' +
@@ -2099,7 +2201,7 @@ function renderSelectedGroupPreview() {
     <div class="group-preview">
       <div class="group-preview-avatars">${avatarsHtml}</div>
       <span class="group-preview-name">${escHtml(selectedGroup.name)}</span>
-      <button class="group-preview-edit" data-gid="${selectedGroup.id}">Edit</button>
+      <button class="group-preview-edit">Edit</button>
     </div>
   `;
   container.querySelector('.group-preview-edit').addEventListener('click', () => {
@@ -2353,7 +2455,40 @@ function toggleWeatherUnit() {
   renderWeatherBar();
 }
 
+// ── Migration ─────────────────────────────────────────────────────────────────
+function migrateSubmittedWalks() {
+  const walks = loadWalks();
+  const routes = loadRoutes();
+  let walksChanged = false;
+  let routesChanged = false;
+
+  walks.forEach(w => {
+    if (w.submitted && !w.routeId && !routes.some(r => r.createdFrom === w.id)) {
+      const routeId = w.id * 1000 + 1;
+      const dateStr = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+      routes.push({
+        id: routeId,
+        name: `${w.dog}'s route ${dateStr}`,
+        createdFrom: w.id,
+        coords: w.coords,
+        distance: w.distance,
+        createdAt: w.date,
+        tags: [],
+        notes: '',
+        ratings: []
+      });
+      w.routeId = routeId;
+      walksChanged = true;
+      routesChanged = true;
+    }
+  });
+
+  if (routesChanged) saveRoutes(routes);
+  if (walksChanged) saveWalks(walks);
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
+migrateSubmittedWalks();
 checkSharedRoute();
 renderGroupDropdown();
 fetchWeather();
