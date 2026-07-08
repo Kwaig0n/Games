@@ -1066,6 +1066,7 @@
     <h3>Share Route</h3>
     <p id="share-walk-info">Walk details</p>
     <div class="share-link-box" id="share-link-text"></div>
+    <div id="share-link-status" style="font-size:0.75rem;font-weight:600;margin:-10px 0 14px;text-align:right;"></div>
     <div class="share-options">
       <div class="share-opt" onclick="copyLink()">
         <div class="ico">📋</div>Copy Link
@@ -1714,27 +1715,17 @@ function openShare(id) {
   const walk = loadWalks().find(w => w.id === id);
   if (!walk) return;
   shareItem = { ...walk, _type: 'walk' };
-
   document.getElementById('share-walk-info').textContent =
     `${walk.dog} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
-
-  const encoded = encodeRouteData(shareItem);
-  const link = `${location.origin}${location.pathname}?route=${encoded}`;
-  document.getElementById('share-link-text').textContent = link;
-
+  updateShareLink();
   document.getElementById('share-modal').classList.add('open');
 }
 
 function openRouteShare(route) {
   shareItem = { ...route, _type: 'route' };
-
   document.getElementById('share-walk-info').textContent =
     `${route.name} · ${route.distance.toFixed(2)} km${route.tags && route.tags.length ? ' · ' + route.tags.join(', ') : ''}`;
-
-  const encoded = encodeRouteData(shareItem);
-  const link = `${location.origin}${location.pathname}?route=${encoded}`;
-  document.getElementById('share-link-text').textContent = link;
-
+  updateShareLink();
   document.getElementById('share-modal').classList.add('open');
 }
 
@@ -1742,29 +1733,74 @@ function closeShare() {
   document.getElementById('share-modal').classList.remove('open');
 }
 
-function encodeRouteData(item) {
-  const roundedCoords = item.coords.map(([lat, lng]) => [
-    Math.round(lat * 100000) / 100000,
-    Math.round(lng * 100000) / 100000
-  ]);
-  if (item._type === 'route') {
-    return btoa(JSON.stringify({
-      type: 'route',
-      name: item.name,
-      distance: item.distance,
-      tags: item.tags || [],
-      createdAt: item.createdAt,
-      coords: roundedCoords
-    }));
+// ── Encoded Polyline Algorithm (Google, 5-decimal precision) ──────────────────
+function encodePolyVal(v) {
+  v = v < 0 ? ~(v << 1) : v << 1;
+  let s = '';
+  while (v >= 0x20) { s += String.fromCharCode((0x20 | (v & 0x1f)) + 63); v >>= 5; }
+  return s + String.fromCharCode(v + 63);
+}
+function encodePolyline(coords) {
+  let out = '', pLat = 0, pLng = 0;
+  for (const [lat, lng] of coords) {
+    const iLat = Math.round(lat * 1e5), iLng = Math.round(lng * 1e5);
+    out += encodePolyVal(iLat - pLat) + encodePolyVal(iLng - pLng);
+    pLat = iLat; pLng = iLng;
   }
-  return btoa(JSON.stringify({
-    type: 'walk',
-    dog: item.dog,
-    date: item.date,
-    duration: item.duration,
-    distance: item.distance,
-    coords: roundedCoords
-  }));
+  return out;
+}
+function decodePolyline(str) {
+  const pts = []; let i = 0, lat = 0, lng = 0;
+  while (i < str.length) {
+    let b, shift = 0, result = 0;
+    do { b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += result & 1 ? ~(result >> 1) : result >> 1;
+    shift = 0; result = 0;
+    do { b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += result & 1 ? ~(result >> 1) : result >> 1;
+    pts.push([lat / 1e5, lng / 1e5]);
+  }
+  return pts;
+}
+function toBase64URL(s) { return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function fromBase64URL(s) { return atob(s.replace(/-/g, '+').replace(/_/g, '/')); }
+function downsampleCoords(coords, n) {
+  return coords.filter((_, i) => i % n === 0 || i === coords.length - 1);
+}
+
+const SHARE_MAX_CHARS = 1900;
+
+function encodeRouteData(item, coords) {
+  const poly = encodePolyline(coords);
+  const payload = item._type === 'route'
+    ? { v: 2, t: 'r', n: item.name, d: item.distance, g: item.tags || [], a: item.createdAt, p: poly }
+    : { v: 2, t: 'w', o: item.dog, e: item.date, u: item.duration, d: item.distance, p: poly };
+  return toBase64URL(JSON.stringify(payload));
+}
+
+function buildShareLink(item) {
+  const base = `${location.origin}${location.pathname}?route=`;
+  let simplified = false;
+  for (let n = 1; n <= 128; n = n === 1 ? 2 : n * 2) {
+    const pts = n === 1 ? item.coords : downsampleCoords(item.coords, n);
+    const link = base + encodeRouteData(item, pts);
+    if (link.length <= SHARE_MAX_CHARS || pts.length <= 2) {
+      if (n > 1) simplified = true;
+      return { link, simplified };
+    }
+  }
+  // Absolute fallback: just start + end
+  return { link: base + encodeRouteData(item, [item.coords[0], item.coords[item.coords.length - 1]]), simplified: true };
+}
+
+function updateShareLink() {
+  const { link, simplified } = buildShareLink(shareItem);
+  document.getElementById('share-link-text').textContent = link;
+  const chars = link.length;
+  const ok = chars <= SHARE_MAX_CHARS;
+  const status = document.getElementById('share-link-status');
+  status.textContent = `${chars} chars${simplified ? ' · simplified' : ''}${!ok ? ' · may be truncated' : ''}`;
+  status.style.color = ok ? 'var(--success)' : 'var(--danger)';
 }
 
 function copyLink() {
@@ -2364,52 +2400,65 @@ function checkSharedRoute() {
   const encoded = params.get('route');
   if (!encoded) return;
 
+  // Try new format first (v2: base64url + encoded polyline)
+  let isNew = false, data = null;
   try {
-    const data = JSON.parse(atob(encoded));
+    const parsed = JSON.parse(fromBase64URL(encoded));
+    if (parsed.v === 2) { data = parsed; isNew = true; }
+  } catch (_) {}
 
+  // Fall back to legacy format (btoa + raw JSON coords array)
+  if (!data) {
+    try {
+      data = JSON.parse(atob(encoded));
+    } catch (_) {
+      showToast('Invalid shared route link.');
+      history.replaceState({}, '', location.pathname);
+      return;
+    }
+  }
+
+  if (isNew) {
+    const coords = decodePolyline(data.p);
+    if (data.t === 'r') {
+      const routes = loadRoutes();
+      if (!routes.some(r => r.name === data.n && r.createdAt === data.a)) {
+        routes.unshift({ id: Date.now(), name: data.n, createdFrom: null,
+          coords, distance: data.d, createdAt: data.a, tags: data.g || [], notes: '', ratings: [] });
+        saveRoutes(routes);
+        showToast(`Imported route: ${data.n}!`);
+      } else { showToast('Route already saved.'); }
+    } else {
+      const dog = data.o || 'Unknown Dog';
+      const walks = loadWalks();
+      if (!walks.some(w => w.date === data.e && w.dog === dog)) {
+        walks.unshift({ id: Date.now(), dog, date: data.e, duration: data.u,
+          distance: data.d, coords, color: randomColor() });
+        saveWalks(walks);
+        showToast(`Imported ${dog}'s walk!`);
+      } else { showToast('Walk already saved.'); }
+    }
+  } else {
+    // Legacy format: type:'route'|'walk' with raw coords array
     if (data.type === 'route') {
       const routes = loadRoutes();
-      const alreadySaved = routes.some(r => r.name === data.name && r.createdAt === data.createdAt);
-      if (!alreadySaved) {
-        routes.unshift({
-          id: Date.now(),
-          name: data.name,
-          createdFrom: null,
-          coords: data.coords,
-          distance: data.distance,
-          createdAt: data.createdAt,
-          tags: data.tags || [],
-          notes: '',
-          ratings: []
-        });
+      if (!routes.some(r => r.name === data.name && r.createdAt === data.createdAt)) {
+        routes.unshift({ id: Date.now(), name: data.name, createdFrom: null,
+          coords: data.coords, distance: data.distance, createdAt: data.createdAt,
+          tags: data.tags || [], notes: '', ratings: [] });
         saveRoutes(routes);
         showToast(`Imported route: ${data.name}!`);
-      } else {
-        showToast('Route already saved.');
-      }
+      } else { showToast('Route already saved.'); }
     } else {
-      // Legacy walk or type:'walk' import
       const dog = data.dog || 'Unknown Dog';
-      const existing = loadWalks();
-      const alreadySaved = existing.some(w => w.date === data.date && w.dog === dog);
-      if (!alreadySaved) {
-        existing.unshift({
-          id: Date.now(),
-          dog,
-          date: data.date,
-          duration: data.duration,
-          distance: data.distance,
-          coords: data.coords,
-          color: randomColor()
-        });
-        saveWalks(existing);
+      const walks = loadWalks();
+      if (!walks.some(w => w.date === data.date && w.dog === dog)) {
+        walks.unshift({ id: Date.now(), dog, date: data.date, duration: data.duration,
+          distance: data.distance, coords: data.coords, color: randomColor() });
+        saveWalks(walks);
         showToast(`Imported ${dog}'s walk!`);
-      } else {
-        showToast('Route already saved.');
-      }
+      } else { showToast('Walk already saved.'); }
     }
-  } catch (e) {
-    showToast('Invalid shared route link.');
   }
 
   history.replaceState({}, '', location.pathname);
