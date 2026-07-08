@@ -842,6 +842,83 @@
       margin-left: 6px;
       vertical-align: middle;
     }
+
+    /* ── Tag toggle chips ── */
+    .tag-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .tag-chip {
+      display: inline-block;
+      padding: 5px 11px;
+      border-radius: 20px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .tag-chip.selected {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* ── Paw rating ── */
+    .paw-rating-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .paw-star {
+      font-size: 1.6rem;
+      opacity: 0.25;
+      cursor: pointer;
+      transition: opacity 0.1s, transform 0.1s;
+      user-select: none;
+    }
+    .paw-star.lit { opacity: 1; }
+    .paw-star:active { transform: scale(1.2); }
+    .paw-avg {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    /* ── Community routes filter ── */
+    .cr-filter-bar { margin-bottom: 14px; }
+    .cr-filter-label {
+      font-size: 0.73rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 5px;
+    }
+    .cr-filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .cr-paw-btn {
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--muted);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .cr-paw-btn.selected {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
   </style>
 </head>
 <body>
@@ -961,6 +1038,12 @@
 
   <!-- Community Submitted Routes -->
   <div class="section-title" style="margin-top:20px;margin-bottom:10px;">🌐 Community Routes</div>
+  <div class="cr-filter-bar" id="cr-filter-bar" style="display:none;">
+    <div class="cr-filter-label">Filter by tag</div>
+    <div class="cr-filter-row" id="cr-tag-filter-row"></div>
+    <div class="cr-filter-label">Min paw score</div>
+    <div class="cr-filter-row" id="cr-paw-filter-row"></div>
+  </div>
   <div id="community-routes-list"></div>
 
   <!-- Top Routes -->
@@ -1006,6 +1089,12 @@
   <div class="modal">
     <h3 id="view-title">Route</h3>
     <p id="view-info"></p>
+    <div id="view-route-meta" style="display:none;margin-bottom:12px;">
+      <div id="view-route-paw-avg" style="margin-bottom:8px;"></div>
+      <div id="view-route-tag-chips" class="tag-chips-row" style="margin-bottom:10px;"></div>
+      <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:5px;">Rate this route</div>
+      <div class="paw-rating-row" id="view-route-paw-row"></div>
+    </div>
     <div id="mini-map-modal"></div>
     <button class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;font-size:0.9rem;" onclick="openShareFromView()">↗ Share this Route</button>
     <button class="btn-close-modal" onclick="closeView()">Close</button>
@@ -1022,8 +1111,12 @@
       <input id="route-name-input" type="text" placeholder="e.g. Kings Park Loop" style="font-size:1rem;" />
     </div>
     <div class="place-form-group">
-      <label>Tags (optional, comma-separated)</label>
-      <input id="route-tags-input" type="text" placeholder="e.g. hilly, off-leash, shady" style="font-size:1rem;" />
+      <label>Tags (optional)</label>
+      <div class="tag-chips-row" id="create-route-tag-chips"></div>
+    </div>
+    <div class="place-form-group">
+      <label>Paw rating (optional)</label>
+      <div class="paw-rating-row" id="create-route-paw-row"></div>
     </div>
     <div class="place-form-group">
       <label>Notes (optional)</label>
@@ -1489,6 +1582,7 @@ function viewWalk(id) {
   document.getElementById('view-title').textContent = `🐶 ${walk.dog}'s Walk`;
   document.getElementById('view-info').textContent =
     `${new Date(walk.date).toLocaleString()} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
+  document.getElementById('view-route-meta').style.display = 'none';
 
   document.getElementById('view-modal').classList.add('open');
   openMiniMap(walk.coords, walk.color || '#4a90d9');
@@ -1500,9 +1594,38 @@ function viewRoute(id) {
   currentViewItem = { type: 'route', data: route };
 
   document.getElementById('view-title').textContent = `🗺️ ${route.name}`;
-  const tags = route.tags && route.tags.length ? ` · ${route.tags.join(', ')}` : '';
   document.getElementById('view-info').textContent =
-    `${new Date(route.createdAt).toLocaleString()} · ${route.distance.toFixed(2)} km${tags}`;
+    `${new Date(route.createdAt).toLocaleString()} · ${route.distance.toFixed(2)} km`;
+
+  // Show rating + tags section
+  const meta = document.getElementById('view-route-meta');
+  meta.style.display = '';
+  document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(route);
+
+  const viewTagSet = new Set(route.tags || []);
+  buildTagChips('view-route-tag-chips', viewTagSet, (tag, sel) => {
+    if (sel) viewTagSet.add(tag); else viewTagSet.delete(tag);
+    const routes = loadRoutes();
+    const idx = routes.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      routes[idx].tags = [...viewTagSet];
+      saveRoutes(routes);
+      currentViewItem.data = routes[idx];
+    }
+  });
+
+  buildPawRow('view-route-paw-row', 0, n => {
+    const routes = loadRoutes();
+    const idx = routes.findIndex(r => r.id === id);
+    if (idx !== -1) {
+      routes[idx].ratings = routes[idx].ratings || [];
+      routes[idx].ratings.push({ stars: n, date: new Date().toISOString() });
+      saveRoutes(routes);
+      currentViewItem.data = routes[idx];
+      document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(routes[idx]);
+      showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
+    }
+  });
 
   document.getElementById('view-modal').classList.add('open');
   openMiniMap(route.coords, '#4a90d9');
@@ -1682,17 +1805,81 @@ ${pts}
 let placesMap, placeMarkers = {};
 let pendingPlaceCoords = null;
 
+// ── Route tags & rating helpers ───────────────────────────────────────────────
+const ROUTE_TAGS = ['Shady','Off-leash area','Bins available','Water available','Footpath','Bush trail','Quiet','Reactive-dog friendly'];
+
+let communityTagFilter = new Set();
+let communityMinPaws = 0;
+
+function avgPaws(route) {
+  if (!route.ratings || route.ratings.length === 0) return 0;
+  return route.ratings.reduce((s, r) => s + r.stars, 0) / route.ratings.length;
+}
+
+function renderPawAvg(route) {
+  const avg = avgPaws(route);
+  const count = (route.ratings || []).length;
+  if (count === 0) return '<span style="font-size:0.78rem;color:var(--muted);">No ratings yet</span>';
+  const filled = Math.round(avg);
+  const paws = '🐾'.repeat(filled) + '<span style="opacity:0.25">' + '🐾'.repeat(5 - filled) + '</span>';
+  return `<span style="font-size:1rem;">${paws}</span> <span class="paw-avg">${avg.toFixed(1)} (${count} rating${count !== 1 ? 's' : ''})</span>`;
+}
+
+function buildTagChips(containerId, selectedTags, onToggle) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = ROUTE_TAGS.map(tag => {
+    const sel = selectedTags.has(tag) ? ' selected' : '';
+    return `<span class="tag-chip${sel}" data-tag="${escHtml(tag)}">${escHtml(tag)}</span>`;
+  }).join('');
+  container.querySelectorAll('.tag-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+      onToggle(chip.dataset.tag, chip.classList.contains('selected'));
+    });
+  });
+}
+
+function buildPawRow(containerId, currentStars, onRate) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = [1,2,3,4,5].map(n =>
+    `<span class="paw-star${n <= currentStars ? ' lit' : ''}" data-n="${n}">🐾</span>`
+  ).join('');
+  let hovered = currentStars;
+  container.querySelectorAll('.paw-star').forEach(star => {
+    const n = parseInt(star.dataset.n, 10);
+    star.addEventListener('mouseenter', () => {
+      container.querySelectorAll('.paw-star').forEach(s => s.classList.toggle('lit', parseInt(s.dataset.n,10) <= n));
+    });
+    star.addEventListener('mouseleave', () => {
+      container.querySelectorAll('.paw-star').forEach(s => s.classList.toggle('lit', parseInt(s.dataset.n,10) <= hovered));
+    });
+    star.addEventListener('click', () => {
+      hovered = n;
+      container.querySelectorAll('.paw-star').forEach(s => s.classList.toggle('lit', parseInt(s.dataset.n,10) <= n));
+      onRate(n);
+    });
+  });
+}
+
 // ── Create Route from Walk ────────────────────────────────────────────────────
 let pendingRouteWalkId = null;
+
+let createRouteTags = new Set();
+let createRouteRating = 0;
 
 function openCreateRouteModal(id) {
   const walk = loadWalks().find(w => w.id === id);
   if (!walk) return;
   if (walk.routeId) { showToast('Route already created!'); return; }
   pendingRouteWalkId = id;
+  createRouteTags = new Set();
+  createRouteRating = 0;
   document.getElementById('route-name-input').value = walk.dog + '\'s Walk';
-  document.getElementById('route-tags-input').value = '';
   document.getElementById('route-notes-input').value = '';
+  buildTagChips('create-route-tag-chips', createRouteTags, (tag, sel) => {
+    if (sel) createRouteTags.add(tag); else createRouteTags.delete(tag);
+  });
+  buildPawRow('create-route-paw-row', 0, n => { createRouteRating = n; });
   document.getElementById('create-route-modal').classList.add('open');
 }
 
@@ -1705,8 +1892,7 @@ function confirmCreateRoute() {
   const name = document.getElementById('route-name-input').value.trim();
   if (!name) { showToast('Enter a route name.'); return; }
 
-  const tagsRaw = document.getElementById('route-tags-input').value.trim();
-  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const tags = [...createRouteTags];
   const notes = document.getElementById('route-notes-input').value.trim();
 
   const walks = loadWalks();
@@ -1715,6 +1901,9 @@ function confirmCreateRoute() {
 
   const walk = walks[walkIdx];
   const routeId = Date.now();
+  const ratings = createRouteRating > 0
+    ? [{ stars: createRouteRating, date: new Date().toISOString() }]
+    : [];
   const route = {
     id: routeId,
     name,
@@ -1724,7 +1913,7 @@ function confirmCreateRoute() {
     createdAt: new Date().toISOString(),
     tags,
     notes,
-    ratings: []
+    ratings
   };
 
   const routes = loadRoutes();
@@ -1744,23 +1933,71 @@ function confirmCreateRoute() {
 // ── Community Routes ──────────────────────────────────────────────────────────
 function renderCommunityRoutes() {
   const container = document.getElementById('community-routes-list');
-  const routes = loadRoutes();
+  const allRoutes = loadRoutes();
+
+  if (allRoutes.length === 0) {
+    document.getElementById('cr-filter-bar').style.display = 'none';
+    container.innerHTML = `<p class="community-empty">No community routes yet — tap <strong>📍 Route</strong> on a walk in the <strong>Logs</strong> tab to create and share one!</p>`;
+    return;
+  }
+
+  // Build/update filter UI
+  const filterBar = document.getElementById('cr-filter-bar');
+  filterBar.style.display = '';
+  buildTagChips('cr-tag-filter-row', communityTagFilter, (tag, sel) => {
+    if (sel) communityTagFilter.add(tag); else communityTagFilter.delete(tag);
+    applyRouteFilters(allRoutes);
+  });
+  const pawRow = document.getElementById('cr-paw-filter-row');
+  pawRow.innerHTML = ['Any',...[1,2,3,4,5].map(n => '🐾'.repeat(n))].map((label, i) =>
+    `<button class="cr-paw-btn${communityMinPaws === i ? ' selected' : ''}" data-min="${i}">${label}</button>`
+  ).join('');
+  pawRow.querySelectorAll('.cr-paw-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      communityMinPaws = parseInt(btn.dataset.min, 10);
+      pawRow.querySelectorAll('.cr-paw-btn').forEach(b => b.classList.toggle('selected', b === btn));
+      applyRouteFilters(allRoutes);
+    });
+  });
+
+  applyRouteFilters(allRoutes);
+}
+
+function applyRouteFilters(allRoutes) {
+  const container = document.getElementById('community-routes-list');
+  let routes = allRoutes;
+
+  if (communityTagFilter.size > 0) {
+    routes = routes.filter(r =>
+      [...communityTagFilter].every(t => (r.tags || []).includes(t))
+    );
+  }
+  if (communityMinPaws > 0) {
+    routes = routes.filter(r => avgPaws(r) >= communityMinPaws);
+  }
 
   if (routes.length === 0) {
-    container.innerHTML = `<p class="community-empty">No community routes yet — tap <strong>📍 Route</strong> on a walk in the <strong>Logs</strong> tab to create and share one!</p>`;
+    container.innerHTML = `<p class="community-empty">No routes match the current filters.</p>`;
     return;
   }
 
   container.innerHTML = `<div class="featured-scroll">` + routes.map(r => {
     const date = new Date(r.createdAt).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
-    const tagLabel = r.tags && r.tags.length ? escHtml(r.tags[0]) : 'Route';
+    const avg = avgPaws(r);
+    const count = (r.ratings || []).length;
+    const pawHtml = count > 0
+      ? `<div style="font-size:0.78rem;margin-bottom:4px;">${'🐾'.repeat(Math.round(avg))}<span style="color:var(--muted);margin-left:3px;">${avg.toFixed(1)} (${count})</span></div>`
+      : '';
+    const chips = (r.tags || []).slice(0, 2).map(t =>
+      `<span class="category-badge cat-trail" style="margin-right:3px;margin-bottom:3px;">${escHtml(t)}</span>`
+    ).join('');
     return `<div class="featured-card" data-route-id="${r.id}">
         <div class="featured-card-banner" style="background:#e8f0fe;">🗺️</div>
         <div class="featured-card-body">
           <div class="featured-card-name">${escHtml(r.name)}</div>
-          <div class="featured-card-sub">${r.distance.toFixed(2)} km</div>
-          <div class="featured-card-sub">${date}</div>
-          <span class="category-badge cat-trail">${tagLabel}</span>
+          <div class="featured-card-sub">${r.distance.toFixed(2)} km · ${date}</div>
+          ${pawHtml}
+          ${chips}
         </div>
       </div>`;
   }).join('') + `</div>`;
