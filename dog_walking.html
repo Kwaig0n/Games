@@ -715,7 +715,10 @@
     </div>
   </div>
 
-  <span id="walk-status" class="status-badge idle">● Idle</span>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span id="walk-status" class="status-badge idle">● Idle</span>
+    <span id="gps-quality" style="display:none;font-size:0.72rem;color:var(--danger);font-weight:600;">⚠ GPS: poor signal</span>
+  </div>
 
   <div class="btn-group">
     <button id="btn-start" class="btn btn-start" onclick="startWalk()">Start Walk</button>
@@ -899,6 +902,8 @@ let walkCoords = [];
 let walkStart = null;
 let timerInterval = null;
 let watchId = null;
+let lastAcceptedCoord = null;
+let accuracyRejectWindow = []; // sliding window of last 3 readings: true = rejected for accuracy
 
 function startWalk() {
   if (!navigator.geolocation) {
@@ -909,6 +914,8 @@ function startWalk() {
   isWalking = true;
   walkCoords = [];
   walkStart = Date.now();
+  lastAcceptedCoord = null;
+  accuracyRejectWindow = [];
   walkPolyline.setLatLngs([]);
 
   document.getElementById('btn-start').disabled = true;
@@ -938,6 +945,11 @@ function stopWalk() {
   document.getElementById('btn-stop').disabled = true;
   document.getElementById('walk-status').textContent = '● Idle';
   document.getElementById('walk-status').className = 'status-badge idle';
+  document.getElementById('gps-quality').style.display = 'none';
+
+  if (walkCoords.length >= 2) {
+    walkMap.fitBounds(walkPolyline.getBounds(), { padding: [30, 30] });
+  }
 
   if (walkCoords.length < 2) {
     showToast('Not enough GPS points to save this walk.');
@@ -966,6 +978,20 @@ function stopWalk() {
 
 function onPosition(pos) {
   const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+
+  // Track accuracy quality; show indicator when last 3 readings all exceeded threshold
+  const badAccuracy = accuracy > 25;
+  accuracyRejectWindow.push(badAccuracy);
+  if (accuracyRejectWindow.length > 3) accuracyRejectWindow.shift();
+  const poorSignal = accuracyRejectWindow.length === 3 && accuracyRejectWindow.every(Boolean);
+  document.getElementById('gps-quality').style.display = poorSignal ? 'inline' : 'none';
+
+  if (badAccuracy) return;
+
+  // Reject jitter: skip points closer than 3 m to the last accepted coord
+  if (lastAcceptedCoord && haversine(lastAcceptedCoord, [lat, lng]) * 1000 < 3) return;
+
+  lastAcceptedCoord = [lat, lng];
   walkCoords.push([lat, lng]);
   walkPolyline.addLatLng([lat, lng]);
 
@@ -977,7 +1003,7 @@ function onPosition(pos) {
   if (walkCoords.length === 1) {
     walkMap.setView([lat, lng], 16);
   } else {
-    walkMap.fitBounds(walkPolyline.getBounds(), { padding: [30, 30] });
+    walkMap.panTo([lat, lng]);
   }
 
   document.getElementById('stat-pts').textContent = walkCoords.length;
