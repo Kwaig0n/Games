@@ -75,6 +75,74 @@
     .tab { display: none; padding: 20px; }
     .tab.active { display: block; }
 
+    /* ── Weather bar ── */
+    #weather-bar {
+      display: none;
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      align-items: center;
+      gap: 0;
+    }
+
+    .wx-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .wx-icon { font-size: 1.6rem; line-height: 1; }
+
+    .wx-temp {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .wx-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .wx-divider {
+      width: 1px;
+      height: 36px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    .wx-arrow {
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 0 6px;
+    }
+
+    #weather-unit-toggle {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 11px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      cursor: pointer;
+      margin-left: 8px;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    #weather-unit-toggle:active { background: var(--border); }
+
+    #weather-bar.loading .wx-temp { color: var(--muted); }
+
     /* ── Walk tab ── */
     #map {
       height: 340px;
@@ -135,6 +203,235 @@
     }
 
     .dog-row input:focus { border-color: var(--primary); }
+
+    .dog-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      flex-shrink: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .dog-avatar:hover { border-color: var(--primary); }
+    .dog-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .dog-selector-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dog-selector-row select {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 1rem;
+      outline: none;
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .dog-selector-row select:focus { border-color: var(--primary); }
+
+    /* Selected group preview */
+    .group-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .group-preview-avatars { display: flex; }
+
+    .group-preview-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--card);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      overflow: hidden;
+      flex-shrink: 0;
+      margin-left: -8px;
+    }
+
+    .group-preview-avatar:first-child { margin-left: 0; }
+    .group-preview-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+    .group-preview-name { font-weight: 600; font-size: 0.88rem; flex: 1; }
+
+    .group-preview-edit {
+      border: 1px solid var(--border);
+      background: none;
+      cursor: pointer;
+      color: var(--primary);
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Dog Group Modal */
+    #dog-profile-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 3000;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+    }
+
+    #dog-profile-modal.open { display: flex; }
+
+    .dog-profile-box {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 -4px 40px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .dog-profile-title { font-size: 1.1rem; font-weight: 700; }
+
+    .dog-profile-btns { display: flex; gap: 8px; }
+
+    /* Dog rows inside group modal */
+    .modal-dog-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-dog-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px dashed var(--border);
+      cursor: pointer;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: border-color 0.2s;
+    }
+
+    .modal-dog-avatar:hover { border-color: var(--primary); }
+    .modal-dog-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .modal-dog-name {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .modal-dog-name:focus { border-color: var(--primary); }
+
+    .modal-dog-remove {
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 1rem;
+      padding: 4px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .modal-dog-remove:hover { color: var(--danger); }
+
+    .add-dog-btn {
+      background: none;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.82rem;
+      color: var(--primary);
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+    }
+
+    .add-dog-btn:hover { background: var(--bg); }
+
+    #group-name-row { display: flex; flex-direction: column; gap: 4px; }
+    #group-name-row label { font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+
+    #group-name-input {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 1rem;
+      outline: none;
+      width: 100%;
+    }
+
+    #group-name-input:focus { border-color: var(--primary); }
+
+    .walk-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .walk-filter-bar select {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 1rem;
+      outline: none;
+      background: var(--card);
+      color: var(--text);
+    }
+
+    .walk-filter-bar select:focus { border-color: var(--primary); }
+
+    .walk-card-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      overflow: hidden;
+    }
+
+    .walk-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
     .btn-group { display: flex; gap: 12px; }
 
@@ -362,6 +659,189 @@
     }
 
     .toast.show { opacity: 1; }
+
+    /* ── Places tab ── */
+    #places-map {
+      height: 300px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .category-badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .cat-park      { background: #e6f4ea; color: #2d7a3d; }
+    .cat-beach     { background: #fff3e0; color: #b06000; }
+    .cat-trail     { background: #fce4ec; color: #c62828; }
+    .cat-off-leash { background: #e8eaf6; color: #3949ab; }
+    .cat-forest    { background: #e0f2f1; color: #00695c; }
+    .cat-other     { background: #f3e5f5; color: #6a1b9a; }
+
+    .place-form-group { margin-bottom: 12px; }
+    .place-form-group label { font-size: 0.82rem; color: var(--muted); font-weight: 500; display: block; margin-bottom: 4px; }
+    .place-form-group input,
+    .place-form-group select,
+    .place-form-group textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      outline: none;
+      background: white;
+      font-family: inherit;
+    }
+    .place-form-group textarea { resize: none; }
+    .place-form-group input:focus,
+    .place-form-group select:focus,
+    .place-form-group textarea:focus { border-color: var(--primary); }
+
+    /* ── Featured / Top sections ── */
+    .featured-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .featured-scroll::-webkit-scrollbar { display: none; }
+
+    .featured-card {
+      flex-shrink: 0;
+      width: 180px;
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .featured-card:active { transform: scale(0.97); }
+
+    .featured-card-banner {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.4rem;
+    }
+
+    .featured-card-body {
+      padding: 10px 12px 12px;
+    }
+
+    .featured-card-name {
+      font-weight: 700;
+      font-size: 0.82rem;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .featured-card-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .featured-card-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-size: 0.67rem;
+      font-weight: 600;
+    }
+
+    .top-route-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .top-route-rank {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--primary);
+      flex-shrink: 0;
+      width: 28px;
+      text-align: center;
+    }
+
+    .places-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0 14px;
+    }
+
+    .places-divider .section-title { margin-bottom: 0; white-space: nowrap; }
+    .places-divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+
+    /* ── Submit / Near Me ── */
+    .btn-submit { background: #e8f5e9; color: #2e7d32; }
+    .btn-submit.done { background: #c8e6c9; color: #1b5e20; opacity: 0.75; }
+
+    .near-me-btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--primary), #6db8f7);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s;
+    }
+    .near-me-btn:active { opacity: 0.85; }
+
+    .nearby-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .community-empty {
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding: 4px 0 8px;
+    }
+
+    .submitted-badge {
+      display: inline-block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -372,16 +852,35 @@
 </header>
 
 <nav>
-  <button class="active" onclick="showTab('walk')">🗺 Walk</button>
-  <button onclick="showTab('logs')">📋 Logs</button>
-  <button onclick="showTab('routes')">📍 Routes</button>
+  <button class="active" onclick="showTab('walk', this)">🗺 Walk</button>
+  <button onclick="showTab('logs', this)">📋 Logs</button>
+  <button onclick="showTab('routes', this)">📍 Routes</button>
+  <button onclick="showTab('places', this)">🌳 Places</button>
 </nav>
 
 <!-- ══════════════ WALK TAB ══════════════ -->
 <div id="tab-walk" class="tab active">
-  <div id="map"></div>
 
-  <div class="stats-row">
+  <!-- Weather bar -->
+  <div id="weather-bar" class="loading">
+    <div class="wx-block">
+      <div class="wx-icon" id="wx-icon-now">🌡</div>
+      <div class="wx-temp" id="wx-temp-now">--</div>
+      <div class="wx-label">Now</div>
+    </div>
+    <div class="wx-divider"></div>
+    <div class="wx-arrow">›</div>
+    <div class="wx-block" id="wx-next-block">
+      <div class="wx-icon" id="wx-icon-next">🌡</div>
+      <div class="wx-temp" id="wx-temp-next">--</div>
+      <div class="wx-label">Next hour</div>
+    </div>
+    <button id="weather-unit-toggle" onclick="toggleWeatherUnit()">°F</button>
+  </div>
+
+  <div id="map" style="display:none;"></div>
+
+  <div class="stats-row" id="walk-stats" style="display:none;">
     <div class="stat-card">
       <div class="val" id="stat-time">00:00</div>
       <div class="lbl">Duration</div>
@@ -396,12 +895,21 @@
     </div>
   </div>
 
-  <div class="dog-row">
-    <label>Dog:</label>
-    <input id="dog-name" type="text" placeholder="Enter dog name" value="" />
+  <div class="dog-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+    <div style="font-size:0.85rem;color:var(--muted);font-weight:500;">Walking with</div>
+    <div class="dog-selector-row">
+      <select id="group-select" onchange="onGroupSelectChange(this)">
+        <option value="">Select dogs...</option>
+      </select>
+      <button class="btn btn-start" style="padding:8px 14px;font-size:0.85rem;flex:none;" onclick="openGroupModal(null)">+ Add</button>
+    </div>
+    <div id="selected-group-preview"></div>
   </div>
 
-  <span id="walk-status" class="status-badge idle">● Idle</span>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span id="walk-status" class="status-badge idle">● Idle</span>
+    <span id="gps-quality" style="display:none;font-size:0.72rem;color:var(--danger);font-weight:600;">⚠ GPS: poor signal</span>
+  </div>
 
   <div class="btn-group">
     <button id="btn-start" class="btn btn-start" onclick="startWalk()">Start Walk</button>
@@ -412,14 +920,58 @@
 <!-- ══════════════ LOGS TAB ══════════════ -->
 <div id="tab-logs" class="tab">
   <div class="section-title">Walk History</div>
+  <div class="walk-filter-bar">
+    <select id="logs-filter" onchange="renderLogs()">
+      <option value="">All dogs</option>
+    </select>
+  </div>
   <div id="logs-list"></div>
 </div>
 
 <!-- ══════════════ ROUTES TAB ══════════════ -->
 <div id="tab-routes" class="tab">
   <div class="section-title">Saved Routes</div>
+  <div class="walk-filter-bar">
+    <select id="routes-filter" onchange="renderRoutes()">
+      <option value="">All dogs</option>
+    </select>
+  </div>
   <div id="route-map"></div>
+  <div id="route-share-bar" style="display:none;margin-bottom:12px;">
+    <button class="btn btn-start" style="padding:12px;font-size:0.9rem;" onclick="openShareSelected()">↗ Share Selected Route</button>
+  </div>
   <div id="route-list" class="route-list"></div>
+</div>
+
+<!-- ══════════════ PLACES TAB ══════════════ -->
+<div id="tab-places" class="tab">
+
+  <!-- Near Me -->
+  <button class="near-me-btn" onclick="findNearbyRoutes()">
+    <span>📍</span> Find Routes Near Me
+  </button>
+  <div id="nearby-routes-list"></div>
+
+  <!-- Popular Areas -->
+  <div class="section-title" style="margin-bottom:10px;margin-top:8px;">🏆 Popular Areas</div>
+  <div class="featured-scroll" id="featured-areas"></div>
+
+  <!-- Community Submitted Routes -->
+  <div class="section-title" style="margin-top:20px;margin-bottom:10px;">🌐 Community Routes</div>
+  <div id="community-routes-list"></div>
+
+  <!-- Top Routes -->
+  <div class="section-title" style="margin-top:20px;margin-bottom:10px;">🐾 Your Top Routes</div>
+  <div id="top-routes-list"></div>
+
+  <!-- Divider before Your Places -->
+  <div class="places-divider">
+    <div class="section-title">📍 Your Saved Places</div>
+    <hr />
+    <button class="btn-sm btn-view" style="padding:8px 14px;" onclick="startAddPlace()">+ Add</button>
+  </div>
+  <div id="places-map"></div>
+  <div id="places-list"></div>
 </div>
 
 <!-- ══════════════ SHARE MODAL ══════════════ -->
@@ -452,7 +1004,68 @@
     <h3 id="view-title">Route</h3>
     <p id="view-info"></p>
     <div id="mini-map-modal"></div>
+    <button class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;font-size:0.9rem;" onclick="openShareFromView()">↗ Share this Route</button>
     <button class="btn-close-modal" onclick="closeView()">Close</button>
+  </div>
+</div>
+
+<!-- ══════════════ CREATE ROUTE MODAL ══════════════ -->
+<div class="modal-overlay" id="create-route-modal">
+  <div class="modal">
+    <h3>📍 Save as Route</h3>
+    <p>Give this route a name so you can share and reuse it.</p>
+    <div class="place-form-group">
+      <label>Route Name *</label>
+      <input id="route-name-input" type="text" placeholder="e.g. Kings Park Loop" style="font-size:1rem;" />
+    </div>
+    <div class="place-form-group">
+      <label>Tags (optional, comma-separated)</label>
+      <input id="route-tags-input" type="text" placeholder="e.g. hilly, off-leash, shady" style="font-size:1rem;" />
+    </div>
+    <div class="place-form-group">
+      <label>Notes (optional)</label>
+      <textarea id="route-notes-input" rows="2" placeholder="e.g. Great morning walk, bring water" style="font-size:1rem;"></textarea>
+    </div>
+    <button class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;" onclick="confirmCreateRoute()">Create Route</button>
+    <button class="btn-close-modal" onclick="closeCreateRouteModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- ══════════════ FEATURED AREA MODAL ══════════════ -->
+<div class="modal-overlay" id="featured-modal">
+  <div class="modal">
+    <h3 id="featured-modal-title"></h3>
+    <div id="featured-modal-body"></div>
+    <button class="btn-close-modal" style="margin-top:14px;" onclick="closeFeaturedModal()">Close</button>
+  </div>
+</div>
+
+<!-- ══════════════ ADD PLACE MODAL ══════════════ -->
+<div class="modal-overlay" id="place-modal">
+  <div class="modal">
+    <h3>Add Walking Area</h3>
+    <p id="place-coords-text" style="font-family:monospace;font-size:0.78rem;color:var(--muted);margin-bottom:14px;"></p>
+    <div class="place-form-group">
+      <label>Place Name *</label>
+      <input id="place-name-input" type="text" placeholder="e.g. Riverside Park" />
+    </div>
+    <div class="place-form-group">
+      <label>Category</label>
+      <select id="place-category-input">
+        <option value="Park">🌳 Park</option>
+        <option value="Beach">🏖 Beach</option>
+        <option value="Trail">🥾 Trail</option>
+        <option value="Off-leash">🐕 Off-leash Area</option>
+        <option value="Forest">🌲 Forest</option>
+        <option value="Other">📍 Other</option>
+      </select>
+    </div>
+    <div class="place-form-group">
+      <label>Notes (optional)</label>
+      <textarea id="place-notes-input" rows="2" placeholder="e.g. Great for big dogs, parking on Main St"></textarea>
+    </div>
+    <button class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;" onclick="savePlace()">Save Place</button>
+    <button class="btn-close-modal" onclick="closePlaceModal()">Cancel</button>
   </div>
 </div>
 
@@ -460,22 +1073,38 @@
 
 <script>
 // ── Storage helpers ──────────────────────────────────────────────────────────
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    if (e instanceof DOMException &&
+        (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+      showToast('Storage full — delete old walks or photos to free space.');
+    } else {
+      throw e;
+    }
+    return false;
+  }
+}
+
 function loadWalks() {
   return JSON.parse(localStorage.getItem('dogwalks') || '[]');
 }
 function saveWalks(walks) {
-  localStorage.setItem('dogwalks', JSON.stringify(walks));
+  return safeSetItem('dogwalks', JSON.stringify(walks));
 }
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
-function showTab(name) {
+function showTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
+  btn.classList.add('active');
 
   if (name === 'logs') renderLogs();
   if (name === 'routes') renderRoutes();
+  if (name === 'places') renderPlaces();
 }
 
 // ── Main walk map ────────────────────────────────────────────────────────────
@@ -495,16 +1124,42 @@ let walkCoords = [];
 let walkStart = null;
 let timerInterval = null;
 let watchId = null;
+let lastAcceptedCoord = null;
+let accuracyRejectWindow = []; // sliding window of last 3 readings: true = rejected for accuracy
+let unsavedWalk = null; // holds a walk that couldn't be persisted due to quota
+let wakeLockSentinel = null;
 
-function startWalk() {
+async function acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLockSentinel = await navigator.wakeLock.request('screen');
+  } catch (_) {
+    // permission denied or API unavailable — not fatal
+  }
+}
+
+async function startWalk() {
   if (!navigator.geolocation) {
     showToast('Geolocation not supported by this browser.');
     return;
   }
 
+  if ('wakeLock' in navigator) {
+    acquireWakeLock();
+  } else {
+    showToast('Keep your screen on during the walk so GPS tracking isn\'t interrupted.');
+  }
+
+  // Show map and stats; init Leaflet the first time (can't render into a hidden div)
+  document.getElementById('map').style.display = '';
+  document.getElementById('walk-stats').style.display = '';
+  if (!walkMap) initWalkMap();
+
   isWalking = true;
   walkCoords = [];
   walkStart = Date.now();
+  lastAcceptedCoord = null;
+  accuracyRejectWindow = [];
   walkPolyline.setLatLngs([]);
 
   document.getElementById('btn-start').disabled = true;
@@ -530,19 +1185,31 @@ function stopWalk() {
   clearInterval(timerInterval);
   navigator.geolocation.clearWatch(watchId);
 
+  if (wakeLockSentinel) {
+    wakeLockSentinel.release().catch(() => {});
+    wakeLockSentinel = null;
+  }
+
   document.getElementById('btn-start').disabled = false;
   document.getElementById('btn-stop').disabled = true;
   document.getElementById('walk-status').textContent = '● Idle';
   document.getElementById('walk-status').className = 'status-badge idle';
+  document.getElementById('gps-quality').style.display = 'none';
+
+  if (walkCoords.length >= 2) {
+    walkMap.fitBounds(walkPolyline.getBounds(), { padding: [30, 30] });
+  }
 
   if (walkCoords.length < 2) {
     showToast('Not enough GPS points to save this walk.');
+    document.getElementById('map').style.display = 'none';
+    document.getElementById('walk-stats').style.display = 'none';
     return;
   }
 
   const duration = Math.floor((Date.now() - walkStart) / 1000);
   const dist = totalDistance(walkCoords);
-  const dog = document.getElementById('dog-name').value.trim() || 'Unknown Dog';
+  const dog = selectedGroup ? selectedGroup.name : 'Unknown Dog';
 
   const walk = {
     id: Date.now(),
@@ -556,12 +1223,34 @@ function stopWalk() {
 
   const walks = loadWalks();
   walks.unshift(walk);
-  saveWalks(walks);
-  showToast('Walk saved!');
+  if (saveWalks(walks)) {
+    unsavedWalk = null;
+    showToast('Walk saved!');
+  } else {
+    unsavedWalk = walk;
+    showToast('Walk recorded but not saved — free up space and try again.');
+  }
+
+  document.getElementById('map').style.display = 'none';
+  document.getElementById('walk-stats').style.display = 'none';
 }
 
 function onPosition(pos) {
   const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+
+  // Track accuracy quality; show indicator when last 3 readings all exceeded threshold
+  const badAccuracy = accuracy > 25;
+  accuracyRejectWindow.push(badAccuracy);
+  if (accuracyRejectWindow.length > 3) accuracyRejectWindow.shift();
+  const poorSignal = accuracyRejectWindow.length === 3 && accuracyRejectWindow.every(Boolean);
+  document.getElementById('gps-quality').style.display = poorSignal ? 'inline' : 'none';
+
+  if (badAccuracy) return;
+
+  // Reject jitter: skip points closer than 3 m to the last accepted coord
+  if (lastAcceptedCoord && haversine(lastAcceptedCoord, [lat, lng]) * 1000 < 3) return;
+
+  lastAcceptedCoord = [lat, lng];
   walkCoords.push([lat, lng]);
   walkPolyline.addLatLng([lat, lng]);
 
@@ -573,7 +1262,7 @@ function onPosition(pos) {
   if (walkCoords.length === 1) {
     walkMap.setView([lat, lng], 16);
   } else {
-    walkMap.fitBounds(walkPolyline.getBounds(), { padding: [30, 30] });
+    walkMap.panTo([lat, lng]);
   }
 
   document.getElementById('stat-pts').textContent = walkCoords.length;
@@ -615,10 +1304,21 @@ function randomColor() {
 // ── Logs tab ─────────────────────────────────────────────────────────────────
 function renderLogs() {
   const container = document.getElementById('logs-list');
-  const walks = loadWalks();
+  const allWalks = loadWalks();
+
+  // Populate filter dropdown with unique dog/group names
+  const filterSel = document.getElementById('logs-filter');
+  const currentFilter = filterSel.value;
+  const names = [...new Set(allWalks.map(w => w.dog))].sort();
+  filterSel.innerHTML = '<option value="">All dogs</option>' +
+    names.map(n => `<option value="${escHtml(n)}"${n === currentFilter ? ' selected' : ''}>${escHtml(n)}</option>`).join('');
+
+  const walks = currentFilter ? allWalks.filter(w => w.dog === currentFilter) : allWalks;
 
   if (walks.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="icon">🐕</div><p>No walks yet.<br>Start your first walk!</p></div>`;
+    container.innerHTML = currentFilter
+      ? `<div class="empty-state"><div class="icon">🐕</div><p>No walks for <strong>${escHtml(currentFilter)}</strong> yet.</p></div>`
+      : `<div class="empty-state"><div class="icon">🐕</div><p>No walks yet.<br>Start your first walk!</p></div>`;
     return;
   }
 
@@ -627,14 +1327,21 @@ function renderLogs() {
     const dateStr = date.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
     const timeStr = date.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
     const dur = formatDuration(w.duration);
+    const avatarSrc = getAvatarForGroupName(w.dog);
+    const avatarHtml = avatarSrc
+      ? `<img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`
+      : '🐶';
     return `
       <div class="walk-card">
         <div class="walk-card-header">
-          <div>
-            <div class="walk-card-title">🐶 ${escHtml(w.dog)}</div>
-            <div class="walk-card-date">${dateStr} at ${timeStr}</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="walk-card-avatar">${avatarHtml}</div>
+            <div>
+              <div class="walk-card-title">${escHtml(w.dog)}</div>
+              <div class="walk-card-date">${dateStr} at ${timeStr}</div>
+            </div>
           </div>
-          <div style="width:10px;height:10px;border-radius:50%;background:${w.color};margin-top:4px;"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:${w.color};margin-top:4px;flex-shrink:0;"></div>
         </div>
         <div class="walk-meta">
           <span><strong>${w.distance.toFixed(2)}</strong> km</span>
@@ -644,6 +1351,7 @@ function renderLogs() {
         <div class="walk-actions">
           <button class="btn-sm btn-view" onclick="viewWalk(${w.id})">View Route</button>
           <button class="btn-sm btn-share" onclick="openShare(${w.id})">Share</button>
+          <button class="btn-sm btn-submit${w.routeId ? ' done' : ''}" onclick="openCreateRouteModal(${w.id})">${w.routeId ? '✓ Route' : '📍 Route'}</button>
           <button class="btn-sm btn-delete" onclick="deleteWalk(${w.id})">Delete</button>
         </div>
       </div>
@@ -669,7 +1377,11 @@ function formatDuration(secs) {
 }
 
 function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function escXml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
 }
 
 // ── Routes tab ───────────────────────────────────────────────────────────────
@@ -677,8 +1389,17 @@ let routeMap, routeLayers = {};
 let selectedRouteId = null;
 
 function renderRoutes() {
-  const walks = loadWalks();
+  const allWalks = loadWalks();
   const container = document.getElementById('route-list');
+
+  // Populate filter dropdown
+  const filterSel = document.getElementById('routes-filter');
+  const currentFilter = filterSel.value;
+  const names = [...new Set(allWalks.map(w => w.dog))].sort();
+  filterSel.innerHTML = '<option value="">All dogs</option>' +
+    names.map(n => `<option value="${escHtml(n)}"${n === currentFilter ? ' selected' : ''}>${escHtml(n)}</option>`).join('');
+
+  const walks = currentFilter ? allWalks.filter(w => w.dog === currentFilter) : allWalks;
 
   if (!routeMap) {
     routeMap = L.map('route-map').setView([0, 0], 2);
@@ -692,12 +1413,14 @@ function renderRoutes() {
   routeLayers = {};
 
   if (walks.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="icon">🗺️</div><p>No routes yet.<br>Complete a walk to see routes here.</p></div>`;
+    container.innerHTML = currentFilter
+      ? `<div class="empty-state"><div class="icon">🗺️</div><p>No routes for <strong>${escHtml(currentFilter)}</strong> yet.</p></div>`
+      : `<div class="empty-state"><div class="icon">🗺️</div><p>No routes yet.<br>Complete a walk to see routes here.</p></div>`;
     routeMap.setView([0, 0], 2);
     return;
   }
 
-  // Draw all routes on map
+  // Draw filtered routes on map
   const allBounds = [];
   walks.forEach(w => {
     if (w.coords.length < 2) return;
@@ -739,21 +1462,46 @@ function selectRoute(id) {
 
   const layer = routeLayers[id];
   if (layer) routeMap.fitBounds(layer.getBounds(), { padding: [30, 30] });
+
+  document.getElementById('route-share-bar').style.display = 'block';
 }
 
-// ── View walk modal ──────────────────────────────────────────────────────────
+function openShareSelected() {
+  if (selectedRouteId) openShare(selectedRouteId);
+}
+
+// ── View walk / route modal ───────────────────────────────────────────────────
 let miniMap = null;
+let currentViewItem = null; // { type: 'walk'|'route', data: ... }
 
 function viewWalk(id) {
   const walk = loadWalks().find(w => w.id === id);
   if (!walk) return;
+  currentViewItem = { type: 'walk', data: walk };
 
   document.getElementById('view-title').textContent = `🐶 ${walk.dog}'s Walk`;
   document.getElementById('view-info').textContent =
     `${new Date(walk.date).toLocaleString()} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
 
   document.getElementById('view-modal').classList.add('open');
+  openMiniMap(walk.coords, walk.color || '#4a90d9');
+}
 
+function viewRoute(id) {
+  const route = loadRoutes().find(r => r.id === id);
+  if (!route) return;
+  currentViewItem = { type: 'route', data: route };
+
+  document.getElementById('view-title').textContent = `🗺️ ${route.name}`;
+  const tags = route.tags && route.tags.length ? ` · ${route.tags.join(', ')}` : '';
+  document.getElementById('view-info').textContent =
+    `${new Date(route.createdAt).toLocaleString()} · ${route.distance.toFixed(2)} km${tags}`;
+
+  document.getElementById('view-modal').classList.add('open');
+  openMiniMap(route.coords, '#4a90d9');
+}
+
+function openMiniMap(coords, color) {
   setTimeout(() => {
     if (miniMap) { miniMap.remove(); miniMap = null; }
     miniMap = L.map('mini-map-modal');
@@ -761,14 +1509,13 @@ function viewWalk(id) {
       attribution: '© OpenStreetMap'
     }).addTo(miniMap);
 
-    if (walk.coords.length > 1) {
-      const poly = L.polyline(walk.coords, { color: walk.color, weight: 4 }).addTo(miniMap);
+    if (coords.length > 1) {
+      const poly = L.polyline(coords, { color, weight: 4 }).addTo(miniMap);
       miniMap.fitBounds(poly.getBounds(), { padding: [20, 20] });
-
-      L.circleMarker(walk.coords[0], {
+      L.circleMarker(coords[0], {
         radius: 7, color: '#4caf7d', fillColor: '#4caf7d', fillOpacity: 1
       }).bindTooltip('Start').addTo(miniMap);
-      L.circleMarker(walk.coords[walk.coords.length-1], {
+      L.circleMarker(coords[coords.length - 1], {
         radius: 7, color: '#e05252', fillColor: '#e05252', fillOpacity: 1
       }).bindTooltip('End').addTo(miniMap);
     }
@@ -779,19 +1526,45 @@ function viewWalk(id) {
 function closeView() {
   document.getElementById('view-modal').classList.remove('open');
   if (miniMap) { miniMap.remove(); miniMap = null; }
+  currentViewItem = null;
+}
+
+function openShareFromView() {
+  const item = currentViewItem;
+  closeView();
+  if (!item) return;
+  if (item.type === 'route') {
+    openRouteShare(item.data);
+  } else {
+    openShare(item.data.id);
+  }
 }
 
 // ── Share modal ───────────────────────────────────────────────────────────────
-let shareWalk = null;
+let shareItem = null;
 
 function openShare(id) {
-  shareWalk = loadWalks().find(w => w.id === id);
-  if (!shareWalk) return;
+  const walk = loadWalks().find(w => w.id === id);
+  if (!walk) return;
+  shareItem = { ...walk, _type: 'walk' };
 
   document.getElementById('share-walk-info').textContent =
-    `${shareWalk.dog} · ${shareWalk.distance.toFixed(2)} km · ${formatDuration(shareWalk.duration)}`;
+    `${walk.dog} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
 
-  const encoded = encodeRouteData(shareWalk);
+  const encoded = encodeRouteData(shareItem);
+  const link = `${location.origin}${location.pathname}?route=${encoded}`;
+  document.getElementById('share-link-text').textContent = link;
+
+  document.getElementById('share-modal').classList.add('open');
+}
+
+function openRouteShare(route) {
+  shareItem = { ...route, _type: 'route' };
+
+  document.getElementById('share-walk-info').textContent =
+    `${route.name} · ${route.distance.toFixed(2)} km${route.tags && route.tags.length ? ' · ' + route.tags.join(', ') : ''}`;
+
+  const encoded = encodeRouteData(shareItem);
   const link = `${location.origin}${location.pathname}?route=${encoded}`;
   document.getElementById('share-link-text').textContent = link;
 
@@ -802,18 +1575,29 @@ function closeShare() {
   document.getElementById('share-modal').classList.remove('open');
 }
 
-function encodeRouteData(walk) {
-  const data = {
-    dog: walk.dog,
-    date: walk.date,
-    duration: walk.duration,
-    distance: walk.distance,
-    coords: walk.coords.map(([lat, lng]) => [
-      Math.round(lat * 100000) / 100000,
-      Math.round(lng * 100000) / 100000
-    ])
-  };
-  return btoa(JSON.stringify(data));
+function encodeRouteData(item) {
+  const roundedCoords = item.coords.map(([lat, lng]) => [
+    Math.round(lat * 100000) / 100000,
+    Math.round(lng * 100000) / 100000
+  ]);
+  if (item._type === 'route') {
+    return btoa(JSON.stringify({
+      type: 'route',
+      name: item.name,
+      distance: item.distance,
+      tags: item.tags || [],
+      createdAt: item.createdAt,
+      coords: roundedCoords
+    }));
+  }
+  return btoa(JSON.stringify({
+    type: 'walk',
+    dog: item.dog,
+    date: item.date,
+    duration: item.duration,
+    distance: item.distance,
+    coords: roundedCoords
+  }));
 }
 
 function copyLink() {
@@ -831,41 +1615,46 @@ function copyLink() {
 }
 
 function shareNative() {
-  const walk = shareWalk;
-  if (!walk) return;
+  const item = shareItem;
+  if (!item) return;
   const text = document.getElementById('share-link-text').textContent;
   if (navigator.share) {
-    navigator.share({
-      title: `${walk.dog}'s Walk`,
-      text: `Check out ${walk.dog}'s walk — ${walk.distance.toFixed(2)} km in ${formatDuration(walk.duration)}!`,
-      url: text
-    }).catch(() => {});
+    const title = item._type === 'route' ? item.name : `${item.dog}'s Walk`;
+    const desc = item._type === 'route'
+      ? `Check out this route: ${item.name} — ${item.distance.toFixed(2)} km!`
+      : `Check out ${item.dog}'s walk — ${item.distance.toFixed(2)} km in ${formatDuration(item.duration)}!`;
+    navigator.share({ title, text: desc, url: text }).catch(() => {});
   } else {
     copyLink();
   }
 }
 
 function shareWhatsApp() {
-  const walk = shareWalk;
-  if (!walk) return;
+  const item = shareItem;
+  if (!item) return;
   const link = document.getElementById('share-link-text').textContent;
-  const msg = encodeURIComponent(`Check out ${walk.dog}'s walk 🐾 — ${walk.distance.toFixed(2)} km in ${formatDuration(walk.duration)}!\n${link}`);
+  const msg = item._type === 'route'
+    ? encodeURIComponent(`🗺️ Check out this route: ${item.name} — ${item.distance.toFixed(2)} km!\n${link}`)
+    : encodeURIComponent(`Check out ${item.dog}'s walk 🐾 — ${item.distance.toFixed(2)} km in ${formatDuration(item.duration)}!\n${link}`);
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
 function downloadGPX() {
-  const walk = shareWalk;
-  if (!walk || walk.coords.length === 0) return;
+  const item = shareItem;
+  if (!item || item.coords.length === 0) return;
 
-  const pts = walk.coords.map(([lat, lng], i) =>
-    `    <trkpt lat="${lat}" lon="${lng}"><time>${new Date(walk.date).toISOString()}</time></trkpt>`
+  const name = item._type === 'route' ? item.name : `${item.dog}'s Walk`;
+  const dateStr = item._type === 'route' ? item.createdAt : item.date;
+  const pts = item.coords.map(([lat, lng]) =>
+    `    <trkpt lat="${lat}" lon="${lng}"><time>${new Date(dateStr).toISOString()}</time></trkpt>`
   ).join('\n');
 
+  const nameXml = escXml(name);
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="DogWalker">
-  <metadata><name>${walk.dog}'s Walk</name><time>${walk.date}</time></metadata>
+  <metadata><name>${nameXml}</name><time>${dateStr}</time></metadata>
   <trk>
-    <name>${walk.dog}'s Walk</name>
+    <name>${nameXml}</name>
     <trkseg>
 ${pts}
     </trkseg>
@@ -876,10 +1665,416 @@ ${pts}
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${walk.dog.replace(/\s+/g,'_')}_walk_${walk.id}.gpx`;
+  a.download = `${name.replace(/\s+/g,'_')}_${item.id || Date.now()}.gpx`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('GPX downloaded!');
+}
+
+// ── Places tab ────────────────────────────────────────────────────────────────
+let placesMap, placeMarkers = {};
+let pendingPlaceCoords = null;
+
+// ── Create Route from Walk ────────────────────────────────────────────────────
+let pendingRouteWalkId = null;
+
+function openCreateRouteModal(id) {
+  const walk = loadWalks().find(w => w.id === id);
+  if (!walk) return;
+  if (walk.routeId) { showToast('Route already created!'); return; }
+  pendingRouteWalkId = id;
+  document.getElementById('route-name-input').value = walk.dog + '\'s Walk';
+  document.getElementById('route-tags-input').value = '';
+  document.getElementById('route-notes-input').value = '';
+  document.getElementById('create-route-modal').classList.add('open');
+}
+
+function closeCreateRouteModal() {
+  document.getElementById('create-route-modal').classList.remove('open');
+  pendingRouteWalkId = null;
+}
+
+function confirmCreateRoute() {
+  const name = document.getElementById('route-name-input').value.trim();
+  if (!name) { showToast('Enter a route name.'); return; }
+
+  const tagsRaw = document.getElementById('route-tags-input').value.trim();
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const notes = document.getElementById('route-notes-input').value.trim();
+
+  const walks = loadWalks();
+  const walkIdx = walks.findIndex(w => w.id === pendingRouteWalkId);
+  if (walkIdx === -1) { closeCreateRouteModal(); return; }
+
+  const walk = walks[walkIdx];
+  const routeId = Date.now();
+  const route = {
+    id: routeId,
+    name,
+    createdFrom: walk.id,
+    coords: walk.coords,
+    distance: walk.distance,
+    createdAt: new Date().toISOString(),
+    tags,
+    notes,
+    ratings: []
+  };
+
+  const routes = loadRoutes();
+  routes.unshift(route);
+  if (!saveRoutes(routes)) { closeCreateRouteModal(); return; }
+
+  walks[walkIdx].routeId = routeId;
+  saveWalks(walks);
+
+  closeCreateRouteModal();
+  renderLogs();
+  if (document.getElementById('tab-places').classList.contains('active')) renderPlaces();
+
+  openRouteShare(route);
+}
+
+// ── Community Routes ──────────────────────────────────────────────────────────
+function renderCommunityRoutes() {
+  const container = document.getElementById('community-routes-list');
+  const routes = loadRoutes();
+
+  if (routes.length === 0) {
+    container.innerHTML = `<p class="community-empty">No community routes yet — tap <strong>📍 Route</strong> on a walk in the <strong>Logs</strong> tab to create and share one!</p>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="featured-scroll">` + routes.map(r => {
+    const date = new Date(r.createdAt).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+    const tagLabel = r.tags && r.tags.length ? escHtml(r.tags[0]) : 'Route';
+    return `<div class="featured-card" data-route-id="${r.id}">
+        <div class="featured-card-banner" style="background:#e8f0fe;">🗺️</div>
+        <div class="featured-card-body">
+          <div class="featured-card-name">${escHtml(r.name)}</div>
+          <div class="featured-card-sub">${r.distance.toFixed(2)} km</div>
+          <div class="featured-card-sub">${date}</div>
+          <span class="category-badge cat-trail">${tagLabel}</span>
+        </div>
+      </div>`;
+  }).join('') + `</div>`;
+
+  container.querySelectorAll('.featured-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const route = loadRoutes().find(r => r.id === parseInt(card.dataset.routeId, 10));
+      if (route) viewRoute(route.id);
+    });
+  });
+}
+
+// ── Near Me ───────────────────────────────────────────────────────────────────
+function findNearbyRoutes() {
+  if (!navigator.geolocation) { showToast('Geolocation not supported.'); return; }
+  const btn = document.querySelector('.near-me-btn');
+  btn.textContent = '⏳ Locating…';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    btn.innerHTML = '<span>📍</span> Find Routes Near Me';
+    btn.disabled = false;
+    const { latitude: lat, longitude: lng } = pos.coords;
+    const RADIUS_KM = 3;
+    const walks = loadWalks();
+
+    const nearby = walks
+      .map(w => {
+        const minDist = w.coords.reduce((min, c) => { const d = haversine([lat, lng], c); return d < min ? d : min; }, Infinity);
+        return { walk: w, dist: minDist };
+      })
+      .filter(x => x.dist <= RADIUS_KM)
+      .sort((a, b) => a.dist - b.dist);
+
+    const container = document.getElementById('nearby-routes-list');
+    if (nearby.length === 0) {
+      container.innerHTML = `<p class="community-empty" style="margin-bottom:16px;">No saved routes within ${RADIUS_KM} km of your location.</p>`;
+      return;
+    }
+
+    container.innerHTML = nearby.map(({ walk: w, dist }) => {
+      const date = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+      const avatarSrc = getAvatarForGroupName(w.dog);
+      const avatarHtml = avatarSrc
+        ? `<img src="${avatarSrc}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;" />`
+        : `<div style="width:36px;height:36px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🐶</div>`;
+      return `
+        <div class="nearby-card">
+          ${avatarHtml}
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:0.88rem;">${escHtml(w.dog)}'s Walk · ${date}</div>
+            <div style="font-size:0.75rem;color:var(--muted);">${w.distance.toFixed(2)} km total · <strong style="color:var(--primary);">${dist.toFixed(1)} km from you</strong></div>
+          </div>
+          <button class="btn-sm btn-view" onclick="viewWalk(${w.id})" style="flex-shrink:0;">View</button>
+        </div>
+      `;
+    }).join('') + `<p style="font-size:0.72rem;color:var(--muted);margin-bottom:16px;text-align:right;">${nearby.length} route${nearby.length>1?'s':''} within 3 km</p>`;
+
+  }, err => {
+    btn.innerHTML = '<span>📍</span> Find Routes Near Me';
+    btn.disabled = false;
+    showToast('Could not get location: ' + err.message);
+  }, { enableHighAccuracy: true, timeout: 12000 });
+}
+
+const FEATURED_AREAS = [
+  { name: 'Centennial Park', city: 'Sydney, AU', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: -33.8978, lng: 151.2321, desc: 'Huge off-leash areas & lake walks' },
+  { name: 'Princes Park', city: 'Melbourne, AU', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: -37.7833, lng: 144.9669, desc: 'Popular loop track, always busy' },
+  { name: 'South Bank Parklands', city: 'Brisbane, AU', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: -27.4785, lng: 153.0235, desc: 'River views, paths for all sizes' },
+  { name: 'Kings Park', city: 'Perth, AU', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: -31.9601, lng: 115.8312, desc: 'Vast bushland & city views' },
+  { name: 'Bondi Beach Path', city: 'Sydney, AU', category: 'Trail', icon: '🥾', color: '#fce4ec', lat: -33.8915, lng: 151.2767, desc: 'Iconic clifftop coastal walk' },
+  { name: 'Hyde Park', city: 'London, UK', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: 51.5073, lng: -0.1657, desc: 'Famous off-leash area in central London' },
+  { name: 'Central Park', city: 'New York, US', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: 40.7851, lng: -73.9683, desc: 'Dog runs & endless trails' },
+  { name: 'Hampstead Heath', city: 'London, UK', category: 'Forest', icon: '🌲', color: '#e0f2f1', lat: 51.5617, lng: -0.1568, desc: 'Wild woodland, ponds & meadows' },
+];
+
+function renderFeaturedAreas() {
+  const container = document.getElementById('featured-areas');
+  container.innerHTML = FEATURED_AREAS.map(a => `
+    <div class="featured-card"
+         data-lat="${a.lat}" data-lng="${a.lng}"
+         data-name="${escHtml(a.name)}" data-category="${escHtml(a.category)}">
+      <div class="featured-card-banner" style="background:${a.color};">${a.icon}</div>
+      <div class="featured-card-body">
+        <div class="featured-card-name">${escHtml(a.name)}</div>
+        <div class="featured-card-sub">${escHtml(a.city)}</div>
+        <div class="featured-card-sub" style="font-size:0.68rem;margin-bottom:6px;">${escHtml(a.desc)}</div>
+        <span class="category-badge cat-${a.category.toLowerCase().replace(/[^a-z]/g,'-')}">${escHtml(a.category)}</span>
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.featured-card').forEach(card => {
+    card.addEventListener('click', () => openFeaturedArea(
+      parseFloat(card.dataset.lat),
+      parseFloat(card.dataset.lng),
+      card.dataset.name,
+      card.dataset.category
+    ));
+  });
+}
+
+function openFeaturedArea(lat, lng, name, category) {
+  document.getElementById('featured-modal-title').textContent = name;
+
+  const info = document.createElement('p');
+  info.style.cssText = 'font-size:0.82rem;color:var(--muted);margin-bottom:4px;';
+  info.textContent = `${category} · ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+  const row = document.createElement('div');
+  row.style.cssText = 'margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;';
+
+  const dirBtn = document.createElement('button');
+  dirBtn.className = 'btn-sm btn-view';
+  dirBtn.textContent = '📍 Get Directions';
+  dirBtn.addEventListener('click', () => { getDirections(lat, lng); closeFeaturedModal(); });
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-sm btn-share';
+  saveBtn.textContent = '⭐ Save to My Places';
+  saveBtn.addEventListener('click', () => { saveFeaturedAsPlace(lat, lng, name, category); closeFeaturedModal(); });
+
+  row.append(dirBtn, saveBtn);
+  document.getElementById('featured-modal-body').replaceChildren(info, row);
+  document.getElementById('featured-modal').classList.add('open');
+}
+
+function closeFeaturedModal() {
+  document.getElementById('featured-modal').classList.remove('open');
+}
+
+function saveFeaturedAsPlace(lat, lng, name, category) {
+  const alreadySaved = loadPlaces().some(p => p.name === name);
+  if (alreadySaved) { showToast('Already in your places!'); return; }
+  const place = { id: Date.now(), name, category, notes: '', lat, lng };
+  const places = loadPlaces();
+  places.unshift(place);
+  if (savePlaces(places)) {
+    renderPlaces();
+    showToast(`"${escHtml(name)}" saved to your places!`);
+  }
+}
+
+function renderTopRoutes() {
+  const container = document.getElementById('top-routes-list');
+  const walks = loadWalks().slice().sort((a, b) => b.distance - a.distance).slice(0, 3);
+
+  if (walks.length === 0) {
+    container.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);margin-bottom:4px;">Complete walks to see your top routes here.</p>`;
+    return;
+  }
+
+  const medals = ['🥇', '🥈', '🥉'];
+  container.innerHTML = walks.map((w, i) => {
+    const date = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+    const avatarSrc = getAvatarForGroupName(w.dog);
+    const avatarHtml = avatarSrc
+      ? `<img src="${avatarSrc}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;" />`
+      : `<div style="width:36px;height:36px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🐶</div>`;
+    return `
+      <div class="top-route-card">
+        <div class="top-route-rank">${medals[i]}</div>
+        ${avatarHtml}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:0.88rem;">${escHtml(w.dog)}</div>
+          <div style="font-size:0.75rem;color:var(--muted);">${w.distance.toFixed(2)} km · ${formatDuration(w.duration)} · ${date}</div>
+        </div>
+        <button class="btn-sm btn-view" onclick="viewWalk(${w.id})" style="flex-shrink:0;">View</button>
+      </div>
+    `;
+  }).join('');
+}
+
+const CATEGORY_ICONS = { 'Park':'🌳', 'Beach':'🏖', 'Trail':'🥾', 'Off-leash':'🐕', 'Forest':'🌲', 'Other':'📍' };
+
+function loadPlaces() {
+  return JSON.parse(localStorage.getItem('dogplaces') || '[]');
+}
+function savePlaces(places) {
+  return safeSetItem('dogplaces', JSON.stringify(places));
+}
+
+function loadRoutes() {
+  return JSON.parse(localStorage.getItem('dogroutes') || '[]');
+}
+function saveRoutes(routes) {
+  return safeSetItem('dogroutes', JSON.stringify(routes));
+}
+
+function renderPlaces() {
+  renderFeaturedAreas();
+  renderCommunityRoutes();
+  renderTopRoutes();
+  const places = loadPlaces();
+  const container = document.getElementById('places-list');
+
+  if (!placesMap) {
+    placesMap = L.map('places-map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(placesMap);
+  }
+
+  Object.values(placeMarkers).forEach(m => placesMap.removeLayer(m));
+  placeMarkers = {};
+
+  if (places.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">🌳</div><p>No places saved yet.<br>Tap <strong>+ Add Place</strong> to mark a dog-friendly spot at your current location.</p></div>`;
+    placesMap.setView([0, 0], 2);
+    placesMap.invalidateSize();
+    return;
+  }
+
+  const bounds = [];
+  places.forEach(p => {
+    const icon = CATEGORY_ICONS[p.category] || '📍';
+    const marker = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({
+        html: `<div style="font-size:1.6rem;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));">${icon}</div>`,
+        iconSize: [32, 32], iconAnchor: [16, 16], className: ''
+      })
+    }).bindPopup(`<strong>${escHtml(p.name)}</strong><br><em>${escHtml(p.category)}</em>${p.notes ? '<br>' + escHtml(p.notes) : ''}`)
+      .addTo(placesMap);
+    placeMarkers[p.id] = marker;
+    bounds.push([p.lat, p.lng]);
+  });
+
+  if (bounds.length === 1) {
+    placesMap.setView(bounds[0], 15);
+  } else if (bounds.length > 1) {
+    placesMap.fitBounds(bounds, { padding: [30, 30] });
+  }
+  placesMap.invalidateSize();
+
+  container.innerHTML = places.map(p => {
+    const icon = CATEGORY_ICONS[p.category] || '📍';
+    const catClass = 'cat-' + p.category.toLowerCase().replace(/[^a-z]/g, '-');
+    return `
+      <div class="walk-card" style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:0.95rem;margin-bottom:6px;">${icon} ${escHtml(p.name)}</div>
+            <span class="category-badge ${catClass}">${escHtml(p.category)}</span>
+            ${p.notes ? `<div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">${escHtml(p.notes)}</div>` : ''}
+          </div>
+          <button class="btn-sm btn-delete" onclick="deletePlace(${p.id})">Delete</button>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-sm btn-view" onclick="getDirections(${p.lat},${p.lng})">📍 Directions</button>
+          <button class="btn-sm btn-share" onclick="focusPlace(${p.id})">🗺 View on Map</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function startAddPlace() {
+  if (!navigator.geolocation) {
+    showToast('Geolocation not supported.');
+    return;
+  }
+  showToast('Getting your location…');
+  navigator.geolocation.getCurrentPosition(pos => {
+    pendingPlaceCoords = [pos.coords.latitude, pos.coords.longitude];
+    document.getElementById('place-coords-text').textContent =
+      `📍 ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+    document.getElementById('place-name-input').value = '';
+    document.getElementById('place-category-input').value = 'Park';
+    document.getElementById('place-notes-input').value = '';
+    document.getElementById('place-modal').classList.add('open');
+  }, err => {
+    showToast('Could not get location: ' + err.message);
+  }, { enableHighAccuracy: true, timeout: 12000 });
+}
+
+function savePlace() {
+  const name = document.getElementById('place-name-input').value.trim();
+  if (!name) { showToast('Please enter a place name.'); return; }
+  if (!pendingPlaceCoords) { showToast('No location data.'); return; }
+
+  const place = {
+    id: Date.now(),
+    name,
+    category: document.getElementById('place-category-input').value,
+    notes: document.getElementById('place-notes-input').value.trim(),
+    lat: pendingPlaceCoords[0],
+    lng: pendingPlaceCoords[1]
+  };
+
+  const places = loadPlaces();
+  places.unshift(place);
+  if (savePlaces(places)) {
+    closePlaceModal();
+    renderPlaces();
+    showToast('Place saved!');
+  }
+}
+
+function closePlaceModal() {
+  document.getElementById('place-modal').classList.remove('open');
+  pendingPlaceCoords = null;
+}
+
+function deletePlace(id) {
+  const places = loadPlaces().filter(p => p.id !== id);
+  savePlaces(places);
+  renderPlaces();
+  showToast('Place removed.');
+}
+
+function getDirections(lat, lng) {
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+}
+
+function focusPlace(id) {
+  const marker = placeMarkers[id];
+  if (marker) {
+    placesMap.setView(marker.getLatLng(), 16);
+    marker.openPopup();
+    document.getElementById('places-map').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 // ── Shared route import ───────────────────────────────────────────────────────
@@ -890,30 +2085,52 @@ function checkSharedRoute() {
 
   try {
     const data = JSON.parse(atob(encoded));
-    const existing = loadWalks();
-    const alreadySaved = existing.some(w => w.date === data.date && w.dog === data.dog);
 
-    if (!alreadySaved) {
-      const walk = {
-        id: Date.now(),
-        dog: data.dog,
-        date: data.date,
-        duration: data.duration,
-        distance: data.distance,
-        coords: data.coords,
-        color: randomColor()
-      };
-      existing.unshift(walk);
-      saveWalks(existing);
-      showToast(`Imported ${data.dog}'s walk!`);
+    if (data.type === 'route') {
+      const routes = loadRoutes();
+      const alreadySaved = routes.some(r => r.name === data.name && r.createdAt === data.createdAt);
+      if (!alreadySaved) {
+        routes.unshift({
+          id: Date.now(),
+          name: data.name,
+          createdFrom: null,
+          coords: data.coords,
+          distance: data.distance,
+          createdAt: data.createdAt,
+          tags: data.tags || [],
+          notes: '',
+          ratings: []
+        });
+        saveRoutes(routes);
+        showToast(`Imported route: ${data.name}!`);
+      } else {
+        showToast('Route already saved.');
+      }
     } else {
-      showToast('Route already saved.');
+      // Legacy walk or type:'walk' import
+      const dog = data.dog || 'Unknown Dog';
+      const existing = loadWalks();
+      const alreadySaved = existing.some(w => w.date === data.date && w.dog === dog);
+      if (!alreadySaved) {
+        existing.unshift({
+          id: Date.now(),
+          dog,
+          date: data.date,
+          duration: data.duration,
+          distance: data.distance,
+          coords: data.coords,
+          color: randomColor()
+        });
+        saveWalks(existing);
+        showToast(`Imported ${dog}'s walk!`);
+      } else {
+        showToast('Route already saved.');
+      }
     }
   } catch (e) {
     showToast('Invalid shared route link.');
   }
 
-  // Clean URL
   history.replaceState({}, '', location.pathname);
 }
 
@@ -925,14 +2142,386 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-initWalkMap();
-checkSharedRoute();
+// ── Dog Groups ────────────────────────────────────────────────────────────────
+let selectedGroup = null;  // { id, name, dogs: [{name, avatar}] }
+let editingGroupId = null;
+let modalDogs = [];        // [{name, avatar}] currently in modal
+let uploadingDogIdx = -1;  // which modal dog is receiving an avatar upload
 
-// Ask for GPS permission proactively
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(() => {}, () => {});
+function loadGroups() {
+  return JSON.parse(localStorage.getItem('doggroups') || '[]');
 }
+
+function saveGroups(groups) {
+  return safeSetItem('doggroups', JSON.stringify(groups));
+}
+
+function getAvatarForGroupName(groupName) {
+  const name = (groupName || '').trim();
+  const groups = loadGroups();
+  const g = groups.find(g => g.name === name);
+  if (g && g.dogs[0] && g.dogs[0].avatar) return g.dogs[0].avatar;
+  // Legacy fallback for walks saved before groups existed
+  return localStorage.getItem('dog-avatar-' + name.toLowerCase()) || null;
+}
+
+function renderGroupDropdown() {
+  const groups = loadGroups();
+  const sel = document.getElementById('group-select');
+  const currentId = selectedGroup ? selectedGroup.id : null;
+  sel.innerHTML = '<option value="">Select dogs...</option>' +
+    groups.map(g =>
+      `<option value="${g.id}"${g.id === currentId ? ' selected' : ''}>${escHtml(g.name)}</option>`
+    ).join('');
+  renderSelectedGroupPreview();
+}
+
+function onGroupSelectChange(sel) {
+  const id = parseInt(sel.value, 10);
+  if (!id) { selectedGroup = null; renderSelectedGroupPreview(); return; }
+  selectedGroup = loadGroups().find(g => g.id === id) || null;
+  renderSelectedGroupPreview();
+}
+
+function renderSelectedGroupPreview() {
+  const container = document.getElementById('selected-group-preview');
+  if (!selectedGroup) {
+    container.innerHTML = '<span style="font-size:0.78rem;color:var(--muted);">No dogs selected.</span>';
+    return;
+  }
+  const avatarsHtml = selectedGroup.dogs.map(d =>
+    `<div class="group-preview-avatar">${d.avatar ? `<img src="${d.avatar}" />` : '🐶'}</div>`
+  ).join('');
+  container.innerHTML = `
+    <div class="group-preview">
+      <div class="group-preview-avatars">${avatarsHtml}</div>
+      <span class="group-preview-name">${escHtml(selectedGroup.name)}</span>
+      <button class="group-preview-edit">Edit</button>
+    </div>
+  `;
+  container.querySelector('.group-preview-edit').addEventListener('click', () => {
+    openGroupModal(selectedGroup.id);
+  });
+}
+
+// ── Group Modal ───────────────────────────────────────────────────────────────
+function openGroupModal(id) {
+  editingGroupId = id;
+  uploadingDogIdx = -1;
+  const isNew = id === null;
+  document.getElementById('dog-profile-modal-title').textContent = isNew ? 'Add Dogs' : 'Edit Dogs';
+  document.getElementById('dog-profile-delete-btn').style.display = isNew ? 'none' : '';
+
+  if (isNew) {
+    modalDogs = [{ name: '', avatar: null }];
+    document.getElementById('group-name-input').value = '';
+  } else {
+    const group = loadGroups().find(g => g.id === id);
+    if (!group) return;
+    modalDogs = group.dogs.map(d => ({ name: d.name, avatar: d.avatar || null }));
+    document.getElementById('group-name-input').value = group.name;
+  }
+
+  renderModalDogs();
+  document.getElementById('dog-profile-modal').classList.add('open');
+  setTimeout(() => {
+    const first = document.querySelector('.modal-dog-name');
+    if (first) first.focus();
+  }, 50);
+}
+
+function closeGroupModal() {
+  document.getElementById('dog-profile-modal').classList.remove('open');
+  editingGroupId = null;
+  modalDogs = [];
+  uploadingDogIdx = -1;
+}
+
+function renderModalDogs() {
+  const container = document.getElementById('modal-dogs-list');
+  container.innerHTML = '';
+  modalDogs.forEach((dog, i) => {
+    const row = document.createElement('div');
+    row.className = 'modal-dog-row';
+
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'modal-dog-avatar';
+    avatarDiv.title = 'Tap to add photo';
+    if (dog.avatar) {
+      const img = document.createElement('img');
+      img.src = dog.avatar;
+      avatarDiv.appendChild(img);
+    } else {
+      avatarDiv.textContent = '🐶';
+    }
+    avatarDiv.addEventListener('click', () => triggerDogAvatarUpload(i));
+
+    const nameInput = document.createElement('input');
+    nameInput.className = 'modal-dog-name';
+    nameInput.type = 'text';
+    nameInput.placeholder = 'Dog\'s name';
+    nameInput.value = dog.name;
+    nameInput.addEventListener('input', () => {
+      modalDogs[i].name = nameInput.value;
+      updateGroupNameVisibility();
+    });
+
+    row.append(avatarDiv, nameInput);
+
+    if (modalDogs.length > 1) {
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'modal-dog-remove';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => { modalDogs.splice(i, 1); renderModalDogs(); });
+      row.appendChild(removeBtn);
+    }
+
+    container.appendChild(row);
+  });
+  updateGroupNameVisibility();
+}
+
+function updateGroupNameVisibility() {
+  const multi = modalDogs.length > 1;
+  document.getElementById('group-name-row').style.display = multi ? '' : 'none';
+  if (!multi) {
+    document.getElementById('group-name-input').value = modalDogs[0]?.name || '';
+  }
+}
+
+function addModalDog() {
+  modalDogs.push({ name: '', avatar: null });
+  renderModalDogs();
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.modal-dog-name');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 30);
+}
+
+function triggerDogAvatarUpload(idx) {
+  uploadingDogIdx = idx;
+  document.getElementById('dog-profile-avatar-input').click();
+}
+
+function handleDogAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const srcImg = new Image();
+    srcImg.onload = () => {
+      const SIZE = 150;
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE; canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      const scale = Math.max(SIZE / srcImg.width, SIZE / srcImg.height);
+      const dx = (SIZE - srcImg.width * scale) / 2;
+      const dy = (SIZE - srcImg.height * scale) / 2;
+      ctx.drawImage(srcImg, dx, dy, srcImg.width * scale, srcImg.height * scale);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      if (uploadingDogIdx >= 0 && uploadingDogIdx < modalDogs.length) {
+        modalDogs[uploadingDogIdx].avatar = dataUrl;
+        renderModalDogs();
+      }
+    };
+    srcImg.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveGroup() {
+  const dogs = modalDogs.map(d => ({ name: d.name.trim(), avatar: d.avatar })).filter(d => d.name);
+  if (dogs.length === 0) { showToast('Add at least one dog name.'); return; }
+
+  const groupName = dogs.length === 1
+    ? dogs[0].name
+    : document.getElementById('group-name-input').value.trim();
+  if (!groupName) { showToast('Enter a group name for multiple dogs.'); return; }
+
+  const groups = loadGroups();
+  if (editingGroupId === null) {
+    const newGroup = { id: Date.now(), name: groupName, dogs };
+    groups.push(newGroup);
+    if (saveGroups(groups)) {
+      showToast(groupName + ' saved!');
+      selectedGroup = newGroup;
+      closeGroupModal();
+      renderGroupDropdown();
+    }
+  } else {
+    const idx = groups.findIndex(g => g.id === editingGroupId);
+    if (idx === -1) return;
+    groups[idx].name = groupName;
+    groups[idx].dogs = dogs;
+    if (saveGroups(groups)) {
+      if (selectedGroup && selectedGroup.id === editingGroupId) selectedGroup = groups[idx];
+      showToast('Updated!');
+      closeGroupModal();
+      renderGroupDropdown();
+    }
+  }
+}
+
+function deleteGroup() {
+  if (editingGroupId === null) return;
+  const groups = loadGroups().filter(g => g.id !== editingGroupId);
+  if (saveGroups(groups)) {
+    if (selectedGroup && selectedGroup.id === editingGroupId) selectedGroup = null;
+    showToast('Group deleted.');
+    closeGroupModal();
+    renderGroupDropdown();
+  }
+}
+
+// ── Weather ───────────────────────────────────────────────────────────────────
+let wxData = null;
+let wxUnit = localStorage.getItem('wxUnit') || 'C';
+
+const WMO = {
+  0:'☀️', 1:'🌤️', 2:'⛅️', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌧️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'🌨️', 73:'🌨️', 75:'❄️', 77:'🌨️',
+  80:'🌦️', 81:'🌧️', 82:'⛈️',
+  85:'🌨️', 86:'❄️',
+  95:'⛈️', 96:'⛈️', 99:'⛈️'
+};
+
+function wmoIcon(code) { return WMO[code] || '🌡️'; }
+
+function fmtTemp(c) {
+  return wxUnit === 'F' ? Math.round(c * 9/5 + 32) + '°F' : Math.round(c) + '°C';
+}
+
+function fetchWeather() {
+  if (!navigator.geolocation) return;
+  const bar = document.getElementById('weather-bar');
+  bar.style.display = 'flex';
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}&current=temperature_2m,weathercode&hourly=temperature_2m,weathercode&forecast_days=1&timezone=auto`;
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        const now = new Date();
+        const nextHourISO = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1)
+          .toISOString().slice(0, 13);
+        const idx = (data.hourly.time || []).findIndex(t => t.startsWith(nextHourISO));
+
+        wxData = {
+          curTemp: data.current.temperature_2m,
+          curCode: data.current.weathercode,
+          nxtTemp: idx >= 0 ? data.hourly.temperature_2m[idx] : null,
+          nxtCode: idx >= 0 ? data.hourly.weathercode[idx] : null,
+        };
+        bar.classList.remove('loading');
+        renderWeatherBar();
+      })
+      .catch(() => { bar.style.display = 'none'; });
+
+  }, () => { bar.style.display = 'none'; },
+    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+}
+
+function renderWeatherBar() {
+  if (!wxData) return;
+  document.getElementById('wx-icon-now').textContent = wmoIcon(wxData.curCode);
+  document.getElementById('wx-temp-now').textContent = fmtTemp(wxData.curTemp);
+
+  const nxtBlock = document.getElementById('wx-next-block');
+  if (wxData.nxtTemp !== null) {
+    document.getElementById('wx-icon-next').textContent = wmoIcon(wxData.nxtCode);
+    document.getElementById('wx-temp-next').textContent = fmtTemp(wxData.nxtTemp);
+    nxtBlock.style.display = 'flex';
+  } else {
+    nxtBlock.style.display = 'none';
+  }
+
+  document.getElementById('weather-unit-toggle').textContent = wxUnit === 'C' ? '°F' : '°C';
+}
+
+function toggleWeatherUnit() {
+  wxUnit = wxUnit === 'C' ? 'F' : 'C';
+  safeSetItem('wxUnit', wxUnit);
+  renderWeatherBar();
+}
+
+// ── Migration ─────────────────────────────────────────────────────────────────
+function migrateSubmittedWalks() {
+  const walks = loadWalks();
+  const routes = loadRoutes();
+  let walksChanged = false;
+  let routesChanged = false;
+
+  walks.forEach(w => {
+    if (w.submitted && !w.routeId && !routes.some(r => r.createdFrom === w.id)) {
+      const routeId = w.id * 1000 + 1;
+      const dateStr = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+      routes.push({
+        id: routeId,
+        name: `${w.dog}'s route ${dateStr}`,
+        createdFrom: w.id,
+        coords: w.coords,
+        distance: w.distance,
+        createdAt: w.date,
+        tags: [],
+        notes: '',
+        ratings: []
+      });
+      w.routeId = routeId;
+      walksChanged = true;
+      routesChanged = true;
+    }
+  });
+
+  if (routesChanged) saveRoutes(routes);
+  if (walksChanged) saveWalks(walks);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+migrateSubmittedWalks();
+checkSharedRoute();
+renderGroupDropdown();
+fetchWeather();
+
+document.getElementById('dog-profile-avatar-input').addEventListener('change', handleDogAvatarUpload);
+
+// Re-acquire wake lock when the tab becomes visible again (locks are auto-released on hide)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && isWalking) {
+    acquireWakeLock();
+  }
+});
+
+// Warn before closing mid-walk
+window.addEventListener('beforeunload', e => {
+  if (!isWalking) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
 </script>
+
+<!-- ══════════════ DOG GROUP MODAL ══════════════ -->
+<div id="dog-profile-modal">
+  <div class="dog-profile-box">
+    <div class="dog-profile-title" id="dog-profile-modal-title">Add Dogs</div>
+    <div id="modal-dogs-list"></div>
+    <button class="add-dog-btn" onclick="addModalDog()">+ Add another dog</button>
+    <input id="dog-profile-avatar-input" type="file" accept="image/*" style="display:none" />
+    <div id="group-name-row" style="display:none;">
+      <label>Group name</label>
+      <input id="group-name-input" type="text" placeholder="e.g. The Pack" />
+    </div>
+    <div class="dog-profile-btns">
+      <button class="btn btn-start" style="padding:10px;font-size:0.9rem;" onclick="saveGroup()">Save</button>
+      <button class="btn btn-stop" id="dog-profile-delete-btn" style="display:none;padding:10px;font-size:0.9rem;" onclick="deleteGroup()">Delete</button>
+      <button class="btn" style="padding:10px;font-size:0.9rem;background:var(--bg);color:var(--text);" onclick="closeGroupModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
