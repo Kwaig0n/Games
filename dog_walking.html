@@ -660,10 +660,10 @@
 </header>
 
 <nav>
-  <button class="active" onclick="showTab('walk')">🗺 Walk</button>
-  <button onclick="showTab('logs')">📋 Logs</button>
-  <button onclick="showTab('routes')">📍 Routes</button>
-  <button onclick="showTab('places')">🌳 Places</button>
+  <button class="active" onclick="showTab('walk', this)">🗺 Walk</button>
+  <button onclick="showTab('logs', this)">📋 Logs</button>
+  <button onclick="showTab('routes', this)">📍 Routes</button>
+  <button onclick="showTab('places', this)">🌳 Places</button>
 </nav>
 
 <!-- ══════════════ WALK TAB ══════════════ -->
@@ -874,11 +874,11 @@ function saveWalks(walks) {
 }
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
-function showTab(name) {
+function showTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
+  btn.classList.add('active');
 
   if (name === 'logs') renderLogs();
   if (name === 'routes') renderRoutes();
@@ -1108,7 +1108,11 @@ function formatDuration(secs) {
 }
 
 function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function escXml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
 }
 
 // ── Routes tab ───────────────────────────────────────────────────────────────
@@ -1310,15 +1314,16 @@ function downloadGPX() {
   const walk = shareWalk;
   if (!walk || walk.coords.length === 0) return;
 
-  const pts = walk.coords.map(([lat, lng], i) =>
+  const pts = walk.coords.map(([lat, lng]) =>
     `    <trkpt lat="${lat}" lon="${lng}"><time>${new Date(walk.date).toISOString()}</time></trkpt>`
   ).join('\n');
 
+  const dogXml = escXml(walk.dog);
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="DogWalker">
-  <metadata><name>${walk.dog}'s Walk</name><time>${walk.date}</time></metadata>
+  <metadata><name>${dogXml}&apos;s Walk</name><time>${walk.date}</time></metadata>
   <trk>
-    <name>${walk.dog}'s Walk</name>
+    <name>${dogXml}&apos;s Walk</name>
     <trkseg>
 ${pts}
     </trkseg>
@@ -1486,28 +1491,51 @@ const FEATURED_AREAS = [
 function renderFeaturedAreas() {
   const container = document.getElementById('featured-areas');
   container.innerHTML = FEATURED_AREAS.map(a => `
-    <div class="featured-card" onclick="openFeaturedArea(${a.lat},${a.lng},'${escHtml(a.name)}','${escHtml(a.category)}')">
+    <div class="featured-card"
+         data-lat="${a.lat}" data-lng="${a.lng}"
+         data-name="${escHtml(a.name)}" data-category="${escHtml(a.category)}">
       <div class="featured-card-banner" style="background:${a.color};">${a.icon}</div>
       <div class="featured-card-body">
         <div class="featured-card-name">${escHtml(a.name)}</div>
         <div class="featured-card-sub">${escHtml(a.city)}</div>
         <div class="featured-card-sub" style="font-size:0.68rem;margin-bottom:6px;">${escHtml(a.desc)}</div>
-        <span class="category-badge cat-${a.category.toLowerCase().replace(/[^a-z]/g,'-')}">${a.category}</span>
+        <span class="category-badge cat-${a.category.toLowerCase().replace(/[^a-z]/g,'-')}">${escHtml(a.category)}</span>
       </div>
     </div>
   `).join('');
+
+  container.querySelectorAll('.featured-card').forEach(card => {
+    card.addEventListener('click', () => openFeaturedArea(
+      parseFloat(card.dataset.lat),
+      parseFloat(card.dataset.lng),
+      card.dataset.name,
+      card.dataset.category
+    ));
+  });
 }
 
 function openFeaturedArea(lat, lng, name, category) {
-  const actions = `
-    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn-sm btn-view" onclick="getDirections(${lat},${lng});closeFeaturedModal()">📍 Get Directions</button>
-      <button class="btn-sm btn-share" onclick="saveFeaturedAsPlace(${lat},${lng},'${name}','${category}');closeFeaturedModal()">⭐ Save to My Places</button>
-    </div>
-  `;
   document.getElementById('featured-modal-title').textContent = name;
-  document.getElementById('featured-modal-body').innerHTML =
-    `<p style="font-size:0.82rem;color:var(--muted);margin-bottom:4px;">${category} · ${lat.toFixed(4)}, ${lng.toFixed(4)}</p>${actions}`;
+
+  const info = document.createElement('p');
+  info.style.cssText = 'font-size:0.82rem;color:var(--muted);margin-bottom:4px;';
+  info.textContent = `${category} · ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+  const row = document.createElement('div');
+  row.style.cssText = 'margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;';
+
+  const dirBtn = document.createElement('button');
+  dirBtn.className = 'btn-sm btn-view';
+  dirBtn.textContent = '📍 Get Directions';
+  dirBtn.addEventListener('click', () => { getDirections(lat, lng); closeFeaturedModal(); });
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-sm btn-share';
+  saveBtn.textContent = '⭐ Save to My Places';
+  saveBtn.addEventListener('click', () => { saveFeaturedAsPlace(lat, lng, name, category); closeFeaturedModal(); });
+
+  row.append(dirBtn, saveBtn);
+  document.getElementById('featured-modal-body').replaceChildren(info, row);
   document.getElementById('featured-modal').classList.add('open');
 }
 
@@ -1597,7 +1625,7 @@ function renderPlaces() {
         html: `<div style="font-size:1.6rem;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));">${icon}</div>`,
         iconSize: [32, 32], iconAnchor: [16, 16], className: ''
       })
-    }).bindPopup(`<strong>${escHtml(p.name)}</strong><br><em>${p.category}</em>${p.notes ? '<br>' + escHtml(p.notes) : ''}`)
+    }).bindPopup(`<strong>${escHtml(p.name)}</strong><br><em>${escHtml(p.category)}</em>${p.notes ? '<br>' + escHtml(p.notes) : ''}`)
       .addTo(placesMap);
     placeMarkers[p.id] = marker;
     bounds.push([p.lat, p.lng]);
@@ -1618,7 +1646,7 @@ function renderPlaces() {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:0.95rem;margin-bottom:6px;">${icon} ${escHtml(p.name)}</div>
-            <span class="category-badge ${catClass}">${p.category}</span>
+            <span class="category-badge ${catClass}">${escHtml(p.category)}</span>
             ${p.notes ? `<div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">${escHtml(p.notes)}</div>` : ''}
           </div>
           <button class="btn-sm btn-delete" onclick="deletePlace(${p.id})">Delete</button>
