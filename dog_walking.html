@@ -920,11 +920,27 @@ let watchId = null;
 let lastAcceptedCoord = null;
 let accuracyRejectWindow = []; // sliding window of last 3 readings: true = rejected for accuracy
 let unsavedWalk = null; // holds a walk that couldn't be persisted due to quota
+let wakeLockSentinel = null;
 
-function startWalk() {
+async function acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLockSentinel = await navigator.wakeLock.request('screen');
+  } catch (_) {
+    // permission denied or API unavailable — not fatal
+  }
+}
+
+async function startWalk() {
   if (!navigator.geolocation) {
     showToast('Geolocation not supported by this browser.');
     return;
+  }
+
+  if ('wakeLock' in navigator) {
+    acquireWakeLock();
+  } else {
+    showToast('Keep your screen on during the walk so GPS tracking isn\'t interrupted.');
   }
 
   isWalking = true;
@@ -956,6 +972,11 @@ function stopWalk() {
   isWalking = false;
   clearInterval(timerInterval);
   navigator.geolocation.clearWatch(watchId);
+
+  if (wakeLockSentinel) {
+    wakeLockSentinel.release().catch(() => {});
+    wakeLockSentinel = null;
+  }
 
   document.getElementById('btn-start').disabled = false;
   document.getElementById('btn-stop').disabled = true;
@@ -1931,6 +1952,20 @@ initWalkMap();
 checkSharedRoute();
 loadAvatarForDog(document.getElementById('dog-name').value);
 fetchWeather();
+
+// Re-acquire wake lock when the tab becomes visible again (locks are auto-released on hide)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && isWalking) {
+    acquireWakeLock();
+  }
+});
+
+// Warn before closing mid-walk
+window.addEventListener('beforeunload', e => {
+  if (!isWalking) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
 </script>
 </body>
 </html>
