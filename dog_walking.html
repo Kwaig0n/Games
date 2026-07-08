@@ -143,6 +143,20 @@
 
     #weather-bar.loading .wx-temp { color: var(--muted); }
 
+    /* ── Heat warning banner ── */
+    .heat-warn {
+      display: none;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 11px 16px;
+      margin-bottom: 14px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .heat-warn-amber { background: #fff8e1; color: #7c5c00; }
+    .heat-warn-red   { background: #fdecea; color: #8b1a1a; }
+
     /* ── Walk tab ── */
     #map {
       height: 340px;
@@ -954,6 +968,8 @@
     </div>
     <button id="weather-unit-toggle" onclick="toggleWeatherUnit()">°F</button>
   </div>
+
+  <div id="heat-warning" class="heat-warn"></div>
 
   <div id="welcome-banner" style="text-align:center;padding:10px 4px 4px;font-size:0.88rem;color:var(--muted);font-weight:500;">🐾 Just add your pup and start walking!</div>
   <br>
@@ -2707,6 +2723,9 @@ function deleteGroup() {
 }
 
 // ── Weather ───────────────────────────────────────────────────────────────────
+const HEAT_WARN_TEMP  = 25; // °C — amber warning threshold
+const HEAT_HOT_TEMP   = 30; // °C — red warning threshold
+
 let wxData = null;
 let wxUnit = localStorage.getItem('wxUnit') || 'C';
 
@@ -2774,6 +2793,20 @@ function renderWeatherBar() {
   }
 
   document.getElementById('weather-unit-toggle').textContent = wxUnit === 'C' ? '°F' : '°C';
+
+  const warn = document.getElementById('heat-warning');
+  const t = wxData.curTemp;
+  if (t >= HEAT_HOT_TEMP) {
+    warn.className = 'heat-warn heat-warn-red';
+    warn.textContent = '🔥 Hot — pavement may burn paws. Walk early morning or evening, stick to grass and shade.';
+    warn.style.display = 'block';
+  } else if (t >= HEAT_WARN_TEMP) {
+    warn.className = 'heat-warn heat-warn-amber';
+    warn.textContent = '⚠️ Warm — check pavement with the back of your hand for 7 seconds.';
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
 }
 
 function toggleWeatherUnit() {
