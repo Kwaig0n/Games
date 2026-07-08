@@ -866,11 +866,26 @@
 
 <script>
 // ── Storage helpers ──────────────────────────────────────────────────────────
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    if (e instanceof DOMException &&
+        (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+      showToast('Storage full — delete old walks or photos to free space.');
+    } else {
+      throw e;
+    }
+    return false;
+  }
+}
+
 function loadWalks() {
   return JSON.parse(localStorage.getItem('dogwalks') || '[]');
 }
 function saveWalks(walks) {
-  localStorage.setItem('dogwalks', JSON.stringify(walks));
+  return safeSetItem('dogwalks', JSON.stringify(walks));
 }
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
@@ -904,6 +919,7 @@ let timerInterval = null;
 let watchId = null;
 let lastAcceptedCoord = null;
 let accuracyRejectWindow = []; // sliding window of last 3 readings: true = rejected for accuracy
+let unsavedWalk = null; // holds a walk that couldn't be persisted due to quota
 
 function startWalk() {
   if (!navigator.geolocation) {
@@ -972,8 +988,15 @@ function stopWalk() {
 
   const walks = loadWalks();
   walks.unshift(walk);
-  saveWalks(walks);
-  showToast('Walk saved!');
+  if (saveWalks(walks)) {
+    unsavedWalk = null;
+    showToast('Walk saved!');
+  } else {
+    // Quota exceeded — safeSetItem already toasted. Keep the walk object alive
+    // so it isn't silently discarded; the caller can retry after freeing space.
+    unsavedWalk = walk;
+    showToast('Walk recorded but not saved — free up space and try again.');
+  }
 }
 
 function onPosition(pos) {
@@ -1549,9 +1572,10 @@ function saveFeaturedAsPlace(lat, lng, name, category) {
   const place = { id: Date.now(), name, category, notes: '', lat, lng };
   const places = loadPlaces();
   places.unshift(place);
-  savePlaces(places);
-  renderPlaces();
-  showToast(`"${name}" saved to your places!`);
+  if (savePlaces(places)) {
+    renderPlaces();
+    showToast(`"${escHtml(name)}" saved to your places!`);
+  }
 }
 
 function renderTopRoutes() {
@@ -1590,7 +1614,7 @@ function loadPlaces() {
   return JSON.parse(localStorage.getItem('dogplaces') || '[]');
 }
 function savePlaces(places) {
-  localStorage.setItem('dogplaces', JSON.stringify(places));
+  return safeSetItem('dogplaces', JSON.stringify(places));
 }
 
 function renderPlaces() {
@@ -1695,10 +1719,11 @@ function savePlace() {
 
   const places = loadPlaces();
   places.unshift(place);
-  savePlaces(places);
-  closePlaceModal();
-  renderPlaces();
-  showToast('Place saved!');
+  if (savePlaces(places)) {
+    closePlaceModal();
+    renderPlaces();
+    showToast('Place saved!');
+  }
 }
 
 function closePlaceModal() {
@@ -1777,16 +1802,34 @@ function avatarKey(name) {
 function handleAvatarUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
+  event.target.value = '';
+
   const reader = new FileReader();
   reader.onload = e => {
-    const dataUrl = e.target.result;
-    const name = document.getElementById('dog-name').value.trim() || 'unknown';
-    localStorage.setItem(avatarKey(name), dataUrl);
-    setAvatarDisplay(dataUrl);
-    showToast('Photo saved for ' + (name || 'your dog') + '!');
+    const srcImg = new Image();
+    srcImg.onload = () => {
+      const SIZE = 150;
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+
+      // Cover crop: scale so the shorter side fills SIZE, then centre
+      const scale = Math.max(SIZE / srcImg.width, SIZE / srcImg.height);
+      const dx = (SIZE - srcImg.width  * scale) / 2;
+      const dy = (SIZE - srcImg.height * scale) / 2;
+      ctx.drawImage(srcImg, dx, dy, srcImg.width * scale, srcImg.height * scale);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      const name = document.getElementById('dog-name').value.trim() || 'unknown';
+      if (safeSetItem(avatarKey(name), dataUrl)) {
+        setAvatarDisplay(dataUrl);
+        showToast('Photo saved for ' + (name || 'your dog') + '!');
+      }
+    };
+    srcImg.src = e.target.result;
   };
   reader.readAsDataURL(file);
-  event.target.value = '';
 }
 
 function setAvatarDisplay(src) {
@@ -1879,7 +1922,7 @@ function renderWeatherBar() {
 
 function toggleWeatherUnit() {
   wxUnit = wxUnit === 'C' ? 'F' : 'C';
-  localStorage.setItem('wxUnit', wxUnit);
+  safeSetItem('wxUnit', wxUnit);
   renderWeatherBar();
 }
 
