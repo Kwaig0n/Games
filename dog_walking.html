@@ -1084,6 +1084,16 @@
   </div>
 </div>
 
+<!-- ══════════════ POST-WALK RATING MODAL ══════════════ -->
+<div class="modal-overlay" id="walk-rating-modal">
+  <div class="modal" style="text-align:center;">
+    <h3 style="margin-bottom:6px;">How was the walk? 🐾</h3>
+    <p id="walk-rating-summary" style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;"></p>
+    <div class="paw-rating-row" id="walk-rating-paw-row" style="justify-content:center;margin-bottom:20px;font-size:2rem;gap:8px;"></div>
+    <button class="btn-close-modal" onclick="skipWalkRating()">Skip</button>
+  </div>
+</div>
+
 <!-- ══════════════ ROUTE VIEW MODAL ══════════════ -->
 <div class="modal-overlay" id="view-modal">
   <div class="modal">
@@ -1325,7 +1335,6 @@ function stopWalk() {
   walks.unshift(walk);
   if (saveWalks(walks)) {
     unsavedWalk = null;
-    showToast('Walk saved!');
   } else {
     unsavedWalk = walk;
     showToast('Walk recorded but not saved — free up space and try again.');
@@ -1333,6 +1342,34 @@ function stopWalk() {
 
   document.getElementById('map').style.display = 'none';
   document.getElementById('walk-stats').style.display = 'none';
+
+  openWalkRatingModal(walk);
+}
+
+let ratingWalkId = null;
+
+function openWalkRatingModal(walk) {
+  ratingWalkId = walk.id;
+  document.getElementById('walk-rating-summary').textContent =
+    `${walk.dog} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
+  buildPawRow('walk-rating-paw-row', 0, n => {
+    const walks = loadWalks();
+    const idx = walks.findIndex(w => w.id === ratingWalkId);
+    if (idx !== -1) {
+      walks[idx].rating = n;
+      saveWalks(walks);
+    }
+    document.getElementById('walk-rating-modal').classList.remove('open');
+    showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}! Walk saved.`);
+    ratingWalkId = null;
+  });
+  document.getElementById('walk-rating-modal').classList.add('open');
+}
+
+function skipWalkRating() {
+  document.getElementById('walk-rating-modal').classList.remove('open');
+  showToast('Walk saved!');
+  ratingWalkId = null;
 }
 
 function onPosition(pos) {
