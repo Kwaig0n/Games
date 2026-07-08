@@ -244,95 +244,90 @@
 
     .dog-selector-row select:focus { border-color: var(--primary); }
 
-    .dog-chips {
+    /* Selected group preview */
+    .group-preview {
       display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .dog-chip {
-      display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 10px;
       background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 3px 8px 3px 4px;
-      font-size: 0.82rem;
-      font-weight: 500;
+      border-radius: 10px;
+      padding: 10px 12px;
     }
 
-    .dog-chip-avatar {
-      width: 24px;
-      height: 24px;
+    .group-preview-avatars { display: flex; }
+
+    .group-preview-avatar {
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      border: 1px solid var(--border);
+      border: 2px solid var(--card);
       background: var(--bg);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.85rem;
+      font-size: 1rem;
       overflow: hidden;
       flex-shrink: 0;
+      margin-left: -8px;
     }
 
-    .dog-chip-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .group-preview-avatar:first-child { margin-left: 0; }
+    .group-preview-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
-    .dog-chip-remove {
-      border: none;
-      background: none;
-      cursor: pointer;
-      color: var(--muted);
-      font-size: 0.85rem;
-      padding: 0;
-      line-height: 1;
-    }
+    .group-preview-name { font-weight: 600; font-size: 0.88rem; flex: 1; }
 
-    .dog-chip-remove:hover { color: var(--danger); }
-
-    .dog-chip-edit {
-      border: none;
+    .group-preview-edit {
+      border: 1px solid var(--border);
       background: none;
       cursor: pointer;
       color: var(--primary);
-      font-size: 0.72rem;
-      padding: 0 1px;
-      line-height: 1;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 6px;
     }
 
-    /* Dog Profile Modal */
+    /* Dog Group Modal */
     #dog-profile-modal {
       display: none;
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.5);
       z-index: 3000;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
-      padding: 20px;
+      padding: 0;
     }
 
     #dog-profile-modal.open { display: flex; }
 
     .dog-profile-box {
       background: var(--card);
-      border-radius: 18px;
-      padding: 24px;
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px 32px;
       width: 100%;
-      max-width: 360px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+      max-width: 480px;
+      box-shadow: 0 -4px 40px rgba(0,0,0,0.18);
       display: flex;
       flex-direction: column;
       gap: 14px;
+      max-height: 85vh;
+      overflow-y: auto;
     }
 
     .dog-profile-title { font-size: 1.1rem; font-weight: 700; }
 
-    .dog-profile-avatar-row { display: flex; align-items: center; gap: 14px; }
+    .dog-profile-btns { display: flex; gap: 8px; }
 
-    #dog-profile-avatar-btn {
-      width: 64px;
-      height: 64px;
+    /* Dog rows inside group modal */
+    .modal-dog-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-dog-avatar {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       border: 2px dashed var(--border);
       cursor: pointer;
@@ -340,27 +335,66 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
+      font-size: 1.3rem;
       overflow: hidden;
       flex-shrink: 0;
       transition: border-color 0.2s;
     }
 
-    #dog-profile-avatar-btn:hover { border-color: var(--primary); }
-    #dog-profile-avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-dog-avatar:hover { border-color: var(--primary); }
+    .modal-dog-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    #dog-profile-name {
+    .modal-dog-name {
       flex: 1;
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.95rem;
+      padding: 8px 10px;
+      font-size: 0.9rem;
       outline: none;
     }
 
-    #dog-profile-name:focus { border-color: var(--primary); }
+    .modal-dog-name:focus { border-color: var(--primary); }
 
-    .dog-profile-btns { display: flex; gap: 8px; }
+    .modal-dog-remove {
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 1rem;
+      padding: 4px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .modal-dog-remove:hover { color: var(--danger); }
+
+    .add-dog-btn {
+      background: none;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.82rem;
+      color: var(--primary);
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+    }
+
+    .add-dog-btn:hover { background: var(--bg); }
+
+    #group-name-row { display: flex; flex-direction: column; gap: 4px; }
+    #group-name-row label { font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+
+    #group-name-input {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      outline: none;
+      width: 100%;
+    }
+
+    #group-name-input:focus { border-color: var(--primary); }
 
     .walk-card-avatar {
       width: 38px;
@@ -842,14 +876,14 @@
   </div>
 
   <div class="dog-row" style="flex-direction:column;align-items:stretch;gap:10px;">
-    <div style="font-size:0.85rem;color:var(--muted);font-weight:500;">Dogs on this walk</div>
+    <div style="font-size:0.85rem;color:var(--muted);font-weight:500;">Walking with</div>
     <div class="dog-selector-row">
-      <select id="dog-select" onchange="onDogSelectChange(this)">
-        <option value="">Add a dog...</option>
+      <select id="group-select" onchange="onGroupSelectChange(this)">
+        <option value="">Select dogs...</option>
       </select>
-      <button class="btn btn-start" style="padding:8px 14px;font-size:0.85rem;flex:none;" onclick="openDogProfile(null)">+ New</button>
+      <button class="btn btn-start" style="padding:8px 14px;font-size:0.85rem;flex:none;" onclick="openGroupModal(null)">+ Add</button>
     </div>
-    <div class="dog-chips" id="selected-dogs-row"></div>
+    <div id="selected-group-preview"></div>
   </div>
 
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1132,7 +1166,7 @@ function stopWalk() {
 
   const duration = Math.floor((Date.now() - walkStart) / 1000);
   const dist = totalDistance(walkCoords);
-  const dog = selectedDogs.length > 0 ? selectedDogs.map(d => d.name).join(' & ') : 'Unknown Dog';
+  const dog = selectedGroup ? selectedGroup.name : 'Unknown Dog';
 
   const walk = {
     id: Date.now(),
@@ -1238,7 +1272,7 @@ function renderLogs() {
     const dateStr = date.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
     const timeStr = date.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
     const dur = formatDuration(w.duration);
-    const avatarSrc = getAvatarForDogName(w.dog);
+    const avatarSrc = getAvatarForGroupName(w.dog);
     const avatarHtml = avatarSrc
       ? `<img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`
       : '🐶';
@@ -1586,7 +1620,7 @@ function renderCommunityRoutes() {
   container.innerHTML = `<div class="featured-scroll">` + walks.map(w => {
     const date = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
     const icon = CATEGORY_ICONS['Trail'] || '🐾';
-    const avatarSrc = getAvatarForDogName(w.dog);
+    const avatarSrc = getAvatarForGroupName(w.dog);
     const banner = avatarSrc
       ? `<img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;" />`
       : `<span style="font-size:2.4rem;">🐾</span>`;
@@ -1634,7 +1668,7 @@ function findNearbyRoutes() {
 
     container.innerHTML = nearby.map(({ walk: w, dist }) => {
       const date = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
-      const avatarSrc = getAvatarForDogName(w.dog);
+      const avatarSrc = getAvatarForGroupName(w.dog);
       const avatarHtml = avatarSrc
         ? `<img src="${avatarSrc}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;" />`
         : `<div style="width:36px;height:36px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🐶</div>`;
@@ -1747,7 +1781,7 @@ function renderTopRoutes() {
   const medals = ['🥇', '🥈', '🥉'];
   container.innerHTML = walks.map((w, i) => {
     const date = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
-    const avatarSrc = getAvatarForDogName(w.dog);
+    const avatarSrc = getAvatarForGroupName(w.dog);
     const avatarHtml = avatarSrc
       ? `<img src="${avatarSrc}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;" />`
       : `<div style="width:36px;height:36px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🐶</div>`;
@@ -1951,137 +1985,165 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ── Dog Profiles ──────────────────────────────────────────────────────────────
-let selectedDogs = [];
-let editingDogId = null;
-let pendingDogAvatar = null;
+// ── Dog Groups ────────────────────────────────────────────────────────────────
+let selectedGroup = null;  // { id, name, dogs: [{name, avatar}] }
+let editingGroupId = null;
+let modalDogs = [];        // [{name, avatar}] currently in modal
+let uploadingDogIdx = -1;  // which modal dog is receiving an avatar upload
 
-function loadProfiles() {
-  return JSON.parse(localStorage.getItem('dogprofiles') || '[]');
+function loadGroups() {
+  return JSON.parse(localStorage.getItem('doggroups') || '[]');
 }
 
-function saveProfiles(profiles) {
-  return safeSetItem('dogprofiles', JSON.stringify(profiles));
+function saveGroups(groups) {
+  return safeSetItem('doggroups', JSON.stringify(groups));
 }
 
-function getAvatarForDogName(dogName) {
-  const name = (dogName || '').trim();
-  const profiles = loadProfiles();
-  const profile = profiles.find(p => p.name === name);
-  if (profile && profile.avatar) return profile.avatar;
-  // Legacy fallback for walks recorded before profiles existed
+function getAvatarForGroupName(groupName) {
+  const name = (groupName || '').trim();
+  const groups = loadGroups();
+  const g = groups.find(g => g.name === name);
+  if (g && g.dogs[0] && g.dogs[0].avatar) return g.dogs[0].avatar;
+  // Legacy fallback for walks saved before groups existed
   return localStorage.getItem('dog-avatar-' + name.toLowerCase()) || null;
 }
 
-function renderDogSelector() {
-  const profiles = loadProfiles();
-  const selectedIds = selectedDogs.map(d => d.id);
-  const sel = document.getElementById('dog-select');
-  sel.innerHTML = '<option value="">Add a dog...</option>' +
-    profiles
-      .filter(p => !selectedIds.includes(p.id))
-      .map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`)
-      .join('');
-  renderSelectedDogs();
+function renderGroupDropdown() {
+  const groups = loadGroups();
+  const sel = document.getElementById('group-select');
+  const currentId = selectedGroup ? selectedGroup.id : null;
+  sel.innerHTML = '<option value="">Select dogs...</option>' +
+    groups.map(g =>
+      `<option value="${g.id}"${g.id === currentId ? ' selected' : ''}>${escHtml(g.name)}</option>`
+    ).join('');
+  renderSelectedGroupPreview();
 }
 
-function onDogSelectChange(sel) {
+function onGroupSelectChange(sel) {
   const id = parseInt(sel.value, 10);
-  if (!id) return;
-  const profile = loadProfiles().find(p => p.id === id);
-  if (profile) addDogToSelection(profile);
-  sel.value = '';
+  if (!id) { selectedGroup = null; renderSelectedGroupPreview(); return; }
+  selectedGroup = loadGroups().find(g => g.id === id) || null;
+  renderSelectedGroupPreview();
 }
 
-function addDogToSelection(profile) {
-  if (selectedDogs.some(d => d.id === profile.id)) return;
-  selectedDogs.push({ id: profile.id, name: profile.name, avatar: profile.avatar || null });
-  renderDogSelector();
-}
-
-function removeDogFromSelection(id) {
-  selectedDogs = selectedDogs.filter(d => d.id !== id);
-  renderDogSelector();
-}
-
-function renderSelectedDogs() {
-  const container = document.getElementById('selected-dogs-row');
-  if (selectedDogs.length === 0) {
-    container.innerHTML = '<span style="font-size:0.78rem;color:var(--muted);">No dogs selected — choose from the dropdown or create a new profile.</span>';
+function renderSelectedGroupPreview() {
+  const container = document.getElementById('selected-group-preview');
+  if (!selectedGroup) {
+    container.innerHTML = '<span style="font-size:0.78rem;color:var(--muted);">No dogs selected.</span>';
     return;
   }
-  container.innerHTML = '';
-  selectedDogs.forEach(dog => {
-    const chip = document.createElement('div');
-    chip.className = 'dog-chip';
-
-    const avatar = document.createElement('div');
-    avatar.className = 'dog-chip-avatar';
-    if (dog.avatar) {
-      const img = document.createElement('img');
-      img.src = dog.avatar;
-      avatar.appendChild(img);
-    } else {
-      avatar.textContent = '🐶';
-    }
-
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = dog.name;
-
-    const editBtn = document.createElement('button');
-    editBtn.className = 'dog-chip-edit';
-    editBtn.textContent = '✏️';
-    editBtn.title = 'Edit profile';
-    editBtn.addEventListener('click', () => openDogProfile(dog.id));
-
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'dog-chip-remove';
-    removeBtn.textContent = '✕';
-    removeBtn.title = 'Remove from this walk';
-    removeBtn.addEventListener('click', () => removeDogFromSelection(dog.id));
-
-    chip.append(avatar, nameSpan, editBtn, removeBtn);
-    container.appendChild(chip);
+  const avatarsHtml = selectedGroup.dogs.map(d =>
+    `<div class="group-preview-avatar">${d.avatar ? `<img src="${d.avatar}" />` : '🐶'}</div>`
+  ).join('');
+  container.innerHTML = `
+    <div class="group-preview">
+      <div class="group-preview-avatars">${avatarsHtml}</div>
+      <span class="group-preview-name">${escHtml(selectedGroup.name)}</span>
+      <button class="group-preview-edit" data-gid="${selectedGroup.id}">Edit</button>
+    </div>
+  `;
+  container.querySelector('.group-preview-edit').addEventListener('click', () => {
+    openGroupModal(selectedGroup.id);
   });
 }
 
-function openDogProfile(id) {
-  editingDogId = id;
-  pendingDogAvatar = null;
+// ── Group Modal ───────────────────────────────────────────────────────────────
+function openGroupModal(id) {
+  editingGroupId = id;
+  uploadingDogIdx = -1;
   const isNew = id === null;
-  document.getElementById('dog-profile-modal-title').textContent = isNew ? 'New Dog Profile' : 'Edit Dog Profile';
+  document.getElementById('dog-profile-modal-title').textContent = isNew ? 'Add Dogs' : 'Edit Dogs';
   document.getElementById('dog-profile-delete-btn').style.display = isNew ? 'none' : '';
 
-  const nameInput = document.getElementById('dog-profile-name');
-  const avatarImg = document.getElementById('dog-profile-avatar-img');
-  const avatarPlaceholder = document.getElementById('dog-profile-avatar-placeholder');
-
   if (isNew) {
-    nameInput.value = '';
-    avatarImg.style.display = 'none';
-    avatarPlaceholder.style.display = '';
+    modalDogs = [{ name: '', avatar: null }];
+    document.getElementById('group-name-input').value = '';
   } else {
-    const profile = loadProfiles().find(p => p.id === id);
-    if (!profile) return;
-    nameInput.value = profile.name;
-    if (profile.avatar) {
-      avatarImg.src = profile.avatar;
-      avatarImg.style.display = 'block';
-      avatarPlaceholder.style.display = 'none';
-    } else {
-      avatarImg.style.display = 'none';
-      avatarPlaceholder.style.display = '';
-    }
+    const group = loadGroups().find(g => g.id === id);
+    if (!group) return;
+    modalDogs = group.dogs.map(d => ({ name: d.name, avatar: d.avatar || null }));
+    document.getElementById('group-name-input').value = group.name;
   }
 
+  renderModalDogs();
   document.getElementById('dog-profile-modal').classList.add('open');
-  setTimeout(() => nameInput.focus(), 50);
+  setTimeout(() => {
+    const first = document.querySelector('.modal-dog-name');
+    if (first) first.focus();
+  }, 50);
 }
 
-function closeDogProfile() {
+function closeGroupModal() {
   document.getElementById('dog-profile-modal').classList.remove('open');
-  editingDogId = null;
-  pendingDogAvatar = null;
+  editingGroupId = null;
+  modalDogs = [];
+  uploadingDogIdx = -1;
+}
+
+function renderModalDogs() {
+  const container = document.getElementById('modal-dogs-list');
+  container.innerHTML = '';
+  modalDogs.forEach((dog, i) => {
+    const row = document.createElement('div');
+    row.className = 'modal-dog-row';
+
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'modal-dog-avatar';
+    avatarDiv.title = 'Tap to add photo';
+    if (dog.avatar) {
+      const img = document.createElement('img');
+      img.src = dog.avatar;
+      avatarDiv.appendChild(img);
+    } else {
+      avatarDiv.textContent = '🐶';
+    }
+    avatarDiv.addEventListener('click', () => triggerDogAvatarUpload(i));
+
+    const nameInput = document.createElement('input');
+    nameInput.className = 'modal-dog-name';
+    nameInput.type = 'text';
+    nameInput.placeholder = 'Dog\'s name';
+    nameInput.value = dog.name;
+    nameInput.addEventListener('input', () => {
+      modalDogs[i].name = nameInput.value;
+      updateGroupNameVisibility();
+    });
+
+    row.append(avatarDiv, nameInput);
+
+    if (modalDogs.length > 1) {
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'modal-dog-remove';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => { modalDogs.splice(i, 1); renderModalDogs(); });
+      row.appendChild(removeBtn);
+    }
+
+    container.appendChild(row);
+  });
+  updateGroupNameVisibility();
+}
+
+function updateGroupNameVisibility() {
+  const multi = modalDogs.length > 1;
+  document.getElementById('group-name-row').style.display = multi ? '' : 'none';
+  if (!multi) {
+    document.getElementById('group-name-input').value = modalDogs[0]?.name || '';
+  }
+}
+
+function addModalDog() {
+  modalDogs.push({ name: '', avatar: null });
+  renderModalDogs();
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.modal-dog-name');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 30);
+}
+
+function triggerDogAvatarUpload(idx) {
+  uploadingDogIdx = idx;
+  document.getElementById('dog-profile-avatar-input').click();
 }
 
 function handleDogAvatarUpload(event) {
@@ -2100,57 +2162,58 @@ function handleDogAvatarUpload(event) {
       const dx = (SIZE - srcImg.width * scale) / 2;
       const dy = (SIZE - srcImg.height * scale) / 2;
       ctx.drawImage(srcImg, dx, dy, srcImg.width * scale, srcImg.height * scale);
-      pendingDogAvatar = canvas.toDataURL('image/jpeg', 0.8);
-      const avatarImg = document.getElementById('dog-profile-avatar-img');
-      avatarImg.src = pendingDogAvatar;
-      avatarImg.style.display = 'block';
-      document.getElementById('dog-profile-avatar-placeholder').style.display = 'none';
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      if (uploadingDogIdx >= 0 && uploadingDogIdx < modalDogs.length) {
+        modalDogs[uploadingDogIdx].avatar = dataUrl;
+        renderModalDogs();
+      }
     };
     srcImg.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-function saveDogProfile() {
-  const name = document.getElementById('dog-profile-name').value.trim();
-  if (!name) { showToast('Please enter a dog name.'); return; }
+function saveGroup() {
+  const dogs = modalDogs.map(d => ({ name: d.name.trim(), avatar: d.avatar })).filter(d => d.name);
+  if (dogs.length === 0) { showToast('Add at least one dog name.'); return; }
 
-  const profiles = loadProfiles();
+  const groupName = dogs.length === 1
+    ? dogs[0].name
+    : document.getElementById('group-name-input').value.trim();
+  if (!groupName) { showToast('Enter a group name for multiple dogs.'); return; }
 
-  if (editingDogId === null) {
-    const newProfile = { id: Date.now(), name, avatar: pendingDogAvatar };
-    profiles.push(newProfile);
-    if (saveProfiles(profiles)) {
-      showToast(name + ' added!');
-      closeDogProfile();
-      addDogToSelection(newProfile);
+  const groups = loadGroups();
+  if (editingGroupId === null) {
+    const newGroup = { id: Date.now(), name: groupName, dogs };
+    groups.push(newGroup);
+    if (saveGroups(groups)) {
+      showToast(groupName + ' saved!');
+      selectedGroup = newGroup;
+      closeGroupModal();
+      renderGroupDropdown();
     }
   } else {
-    const idx = profiles.findIndex(p => p.id === editingDogId);
+    const idx = groups.findIndex(g => g.id === editingGroupId);
     if (idx === -1) return;
-    profiles[idx].name = name;
-    if (pendingDogAvatar !== null) profiles[idx].avatar = pendingDogAvatar;
-    if (saveProfiles(profiles)) {
-      const sel = selectedDogs.find(d => d.id === editingDogId);
-      if (sel) {
-        sel.name = name;
-        if (pendingDogAvatar !== null) sel.avatar = pendingDogAvatar;
-      }
-      showToast('Profile updated!');
-      closeDogProfile();
-      renderDogSelector();
+    groups[idx].name = groupName;
+    groups[idx].dogs = dogs;
+    if (saveGroups(groups)) {
+      if (selectedGroup && selectedGroup.id === editingGroupId) selectedGroup = groups[idx];
+      showToast('Updated!');
+      closeGroupModal();
+      renderGroupDropdown();
     }
   }
 }
 
-function deleteDogProfile() {
-  if (editingDogId === null) return;
-  const profiles = loadProfiles().filter(p => p.id !== editingDogId);
-  if (saveProfiles(profiles)) {
-    selectedDogs = selectedDogs.filter(d => d.id !== editingDogId);
-    showToast('Profile deleted.');
-    closeDogProfile();
-    renderDogSelector();
+function deleteGroup() {
+  if (editingGroupId === null) return;
+  const groups = loadGroups().filter(g => g.id !== editingGroupId);
+  if (saveGroups(groups)) {
+    if (selectedGroup && selectedGroup.id === editingGroupId) selectedGroup = null;
+    showToast('Group deleted.');
+    closeGroupModal();
+    renderGroupDropdown();
   }
 }
 
@@ -2233,12 +2296,9 @@ function toggleWeatherUnit() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 initWalkMap();
 checkSharedRoute();
-renderDogSelector();
+renderGroupDropdown();
 fetchWeather();
 
-document.getElementById('dog-profile-avatar-btn').addEventListener('click', () => {
-  document.getElementById('dog-profile-avatar-input').click();
-});
 document.getElementById('dog-profile-avatar-input').addEventListener('change', handleDogAvatarUpload);
 
 // Re-acquire wake lock when the tab becomes visible again (locks are auto-released on hide)
@@ -2256,22 +2316,21 @@ window.addEventListener('beforeunload', e => {
 });
 </script>
 
-<!-- ══════════════ DOG PROFILE MODAL ══════════════ -->
+<!-- ══════════════ DOG GROUP MODAL ══════════════ -->
 <div id="dog-profile-modal">
   <div class="dog-profile-box">
-    <div class="dog-profile-title" id="dog-profile-modal-title">Dog Profile</div>
-    <div class="dog-profile-avatar-row">
-      <div id="dog-profile-avatar-btn" title="Tap to add photo">
-        <span id="dog-profile-avatar-placeholder">🐶</span>
-        <img id="dog-profile-avatar-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;" />
-      </div>
-      <input id="dog-profile-avatar-input" type="file" accept="image/*" style="display:none" />
-      <input id="dog-profile-name" type="text" placeholder="Dog's name" />
+    <div class="dog-profile-title" id="dog-profile-modal-title">Add Dogs</div>
+    <div id="modal-dogs-list"></div>
+    <button class="add-dog-btn" onclick="addModalDog()">+ Add another dog</button>
+    <input id="dog-profile-avatar-input" type="file" accept="image/*" style="display:none" />
+    <div id="group-name-row" style="display:none;">
+      <label>Group name</label>
+      <input id="group-name-input" type="text" placeholder="e.g. The Pack" />
     </div>
     <div class="dog-profile-btns">
-      <button class="btn btn-start" style="padding:10px;font-size:0.9rem;" onclick="saveDogProfile()">Save</button>
-      <button class="btn btn-stop" id="dog-profile-delete-btn" style="display:none;padding:10px;font-size:0.9rem;" onclick="deleteDogProfile()">Delete</button>
-      <button class="btn" style="padding:10px;font-size:0.9rem;background:var(--bg);color:var(--text);" onclick="closeDogProfile()">Cancel</button>
+      <button class="btn btn-start" style="padding:10px;font-size:0.9rem;" onclick="saveGroup()">Save</button>
+      <button class="btn btn-stop" id="dog-profile-delete-btn" style="display:none;padding:10px;font-size:0.9rem;" onclick="deleteGroup()">Delete</button>
+      <button class="btn" style="padding:10px;font-size:0.9rem;background:var(--bg);color:var(--text);" onclick="closeGroupModal()">Cancel</button>
     </div>
   </div>
 </div>
