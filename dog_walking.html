@@ -1142,6 +1142,10 @@ async function acquireWakeLock() {
 }
 
 async function startWalk() {
+  if (!selectedGroup) {
+    showToast('Please add and select a dog before starting a walk!');
+    return;
+  }
   if (!navigator.geolocation) {
     showToast('Geolocation not supported by this browser.');
     return;
