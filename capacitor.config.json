@@ -1,0 +1,13 @@
+{
+  "appId": "com.yourname.dogwalk",
+  "appName": "DogWalk",
+  "webDir": "DogWalk",
+  "ios": {
+    "contentInset": "always"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  }
+}

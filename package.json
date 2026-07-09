@@ -1,0 +1,13 @@
+{
+  "name": "dogwalk",
+  "version": "1.0.0",
+  "description": "DogWalk – your daily walk companion",
+  "private": true,
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}
