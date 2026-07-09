@@ -82,22 +82,27 @@
       background: var(--card);
       border-radius: 14px;
       box-shadow: var(--shadow);
-      padding: 12px 16px 10px;
+      padding: 10px 16px 12px;
       margin-bottom: 14px;
-      align-items: center;
-      gap: 0;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 8px;
     }
 
     #wx-location {
       width: 100%;
       text-align: center;
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       color: var(--muted);
-      font-weight: 500;
-      letter-spacing: 0.3px;
-      margin-top: 6px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
       display: none;
+    }
+
+    .wx-temps-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      width: 100%;
     }
 
     .wx-block {
@@ -967,20 +972,22 @@
 
   <!-- Weather bar -->
   <div id="weather-bar" class="loading">
-    <div class="wx-block">
-      <div class="wx-icon" id="wx-icon-now">🌡</div>
-      <div class="wx-temp" id="wx-temp-now">--</div>
-      <div class="wx-label">Now</div>
-    </div>
-    <div class="wx-divider"></div>
-    <div class="wx-arrow">›</div>
-    <div class="wx-block" id="wx-next-block">
-      <div class="wx-icon" id="wx-icon-next">🌡</div>
-      <div class="wx-temp" id="wx-temp-next">--</div>
-      <div class="wx-label">Next hour</div>
-    </div>
-    <button id="weather-unit-toggle" onclick="toggleWeatherUnit()">°F</button>
     <div id="wx-location"></div>
+    <div class="wx-temps-row">
+      <div class="wx-block">
+        <div class="wx-icon" id="wx-icon-now">🌡</div>
+        <div class="wx-temp" id="wx-temp-now">--</div>
+        <div class="wx-label">Now</div>
+      </div>
+      <div class="wx-divider"></div>
+      <div class="wx-arrow">›</div>
+      <div class="wx-block" id="wx-next-block">
+        <div class="wx-icon" id="wx-icon-next">🌡</div>
+        <div class="wx-temp" id="wx-temp-next">--</div>
+        <div class="wx-label">Next hour</div>
+      </div>
+      <button id="weather-unit-toggle" onclick="toggleWeatherUnit()">°F</button>
+    </div>
   </div>
 
   <div id="heat-warning" class="heat-warn"></div>
@@ -3033,7 +3040,7 @@ function renderWeatherBar() {
 
   const locEl = document.getElementById('wx-location');
   if (wxData.location) {
-    locEl.textContent = '📍 ' + wxData.location;
+    locEl.textContent = 'Weather for ' + wxData.location;
     locEl.style.display = 'block';
   } else {
     locEl.style.display = 'none';
