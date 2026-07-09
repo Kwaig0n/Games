@@ -2446,16 +2446,31 @@ const FEATURED_AREAS = [
   { name: 'Hampstead Heath', city: 'London, UK', category: 'Forest', icon: '🌲', color: '#e0f2f1', lat: 51.5617, lng: -0.1568, desc: 'Wild woodland, ponds & meadows' },
 ];
 
-function renderFeaturedAreas() {
+function renderFeaturedAreas(userLat, userLng) {
   const container = document.getElementById('featured-areas');
-  container.innerHTML = FEATURED_AREAS.map(a => `
+  const RADIUS_KM = 30;
+
+  let areas = FEATURED_AREAS;
+  if (userLat != null && userLng != null) {
+    areas = FEATURED_AREAS
+      .map(a => ({ ...a, dist: haversine([userLat, userLng], [a.lat, a.lng]) }))
+      .filter(a => a.dist <= RADIUS_KM)
+      .sort((a, b) => a.dist - b.dist);
+  }
+
+  if (areas.length === 0) {
+    container.innerHTML = `<p class="community-empty" style="padding:4px 0;">No popular areas within ${RADIUS_KM} km of your location.</p>`;
+    return;
+  }
+
+  container.innerHTML = areas.map(a => `
     <div class="featured-card"
          data-lat="${a.lat}" data-lng="${a.lng}"
          data-name="${escHtml(a.name)}" data-category="${escHtml(a.category)}">
       <div class="featured-card-banner" style="background:${a.color};">${a.icon}</div>
       <div class="featured-card-body">
         <div class="featured-card-name">${escHtml(a.name)}</div>
-        <div class="featured-card-sub">${escHtml(a.city)}</div>
+        <div class="featured-card-sub">${escHtml(a.city)}${a.dist != null ? ` · ${a.dist.toFixed(1)} km` : ''}</div>
         <div class="featured-card-sub" style="font-size:0.68rem;margin-bottom:6px;">${escHtml(a.desc)}</div>
         <span class="category-badge cat-${a.category.toLowerCase().replace(/[^a-z]/g,'-')}">${escHtml(a.category)}</span>
       </div>
@@ -2677,7 +2692,14 @@ function findRouteById(id) {
 }
 
 function renderPlaces() {
-  renderFeaturedAreas();
+  renderFeaturedAreas(null, null); // render immediately with no filter
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => renderFeaturedAreas(pos.coords.latitude, pos.coords.longitude),
+      () => {}, // silently keep unfiltered on deny
+      { enableHighAccuracy: false, timeout: 6000, maximumAge: 120000 }
+    );
+  }
   renderCommunityRoutes();
   renderTopRoutes();
   const places = loadPlaces();
