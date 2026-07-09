@@ -1137,9 +1137,18 @@
 <div id="tab-places" class="tab">
 
   <!-- Near Me -->
-  <button class="near-me-btn" onclick="findNearbyRoutes()">
-    <span>📍</span> Find Routes Near Me
-  </button>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+    <button class="near-me-btn" style="margin-bottom:0;flex:1;" onclick="findNearbyRoutes()">
+      <span>📍</span> Find Routes Near Me
+    </button>
+    <select id="nearby-radius" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 8px;font-size:0.82rem;font-weight:600;color:var(--text);cursor:pointer;flex-shrink:0;">
+      <option value="1">1 km</option>
+      <option value="3" selected>3 km</option>
+      <option value="5">5 km</option>
+      <option value="10">10 km</option>
+      <option value="25">25 km</option>
+    </select>
+  </div>
   <div id="nearby-routes-list"></div>
 
   <!-- Popular Areas -->
@@ -2283,7 +2292,7 @@ function findNearbyRoutes() {
     btn.innerHTML = '<span>📍</span> Find Routes Near Me';
     btn.disabled = false;
     const { latitude: lat, longitude: lng } = pos.coords;
-    const RADIUS_KM = 3;
+    const RADIUS_KM = parseFloat(document.getElementById('nearby-radius').value) || 3;
     const walks = loadWalks();
 
     const nearby = walks
