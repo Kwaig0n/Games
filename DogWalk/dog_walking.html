@@ -2449,7 +2449,7 @@ function renderFeaturedAreas() {
     const { latitude: lat, longitude: lng } = pos.coords;
     const RADIUS_M = 30000;
     // Single union query using regex is faster than 6 separate type queries
-    const query = `[out:json][timeout:25];(nwr["leisure"~"^(dog_park|park|nature_reserve)$"]["name"](around:${RADIUS_M},${lat},${lng}););out tags center 30;`;
+    const query = `[out:json][timeout:25];(nwr["leisure"~"^(dog_park|park|nature_reserve)$"]["name"](around:${RADIUS_M},${lat},${lng}););out center 30;`;
 
     const ac = new AbortController();
     const fetchTimer = setTimeout(() => ac.abort(), 22000);
