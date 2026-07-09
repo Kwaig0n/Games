@@ -508,6 +508,66 @@
       color: var(--text);
     }
 
+    .week-summary {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .week-stat {
+      flex: 1;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 12px 8px;
+      text-align: center;
+    }
+    .week-stat-val {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .week-stat-lbl {
+      font-size: 0.62rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-top: 4px;
+    }
+
+    .route-planner-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+    .route-planner-card.selected {
+      border: 2px solid var(--primary);
+    }
+    .route-planner-name {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    .route-planner-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .route-planner-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .route-planner-actions {
+      display: flex;
+      gap: 8px;
+    }
+
     .walk-card {
       background: var(--card);
       border-radius: 14px;
@@ -962,8 +1022,8 @@
 
 <nav>
   <button class="active" onclick="showTab('walk', this)">🗺 Walk</button>
-  <button onclick="showTab('logs', this)">📋 Logs</button>
   <button onclick="showTab('routes', this)">📍 Routes</button>
+  <button onclick="showTab('logs', this)">📋 Logs</button>
   <button onclick="showTab('places', this)">🌳 Places</button>
 </nav>
 
@@ -1036,7 +1096,8 @@
 
 <!-- ══════════════ LOGS TAB ══════════════ -->
 <div id="tab-logs" class="tab">
-  <div class="section-title">Walk History</div>
+  <div class="section-title">Walk Journal</div>
+  <div id="logs-week-summary"></div>
   <div class="walk-filter-bar">
     <select id="logs-filter" onchange="renderLogs()">
       <option value="">All dogs</option>
@@ -1048,15 +1109,7 @@
 <!-- ══════════════ ROUTES TAB ══════════════ -->
 <div id="tab-routes" class="tab">
   <div class="section-title">Saved Routes</div>
-  <div class="walk-filter-bar">
-    <select id="routes-filter" onchange="renderRoutes()">
-      <option value="">All dogs</option>
-    </select>
-  </div>
   <div id="route-map"></div>
-  <div id="route-share-bar" style="display:none;margin-bottom:12px;">
-    <button class="btn btn-start" style="padding:12px;font-size:0.9rem;" onclick="openShareSelected()">↗ Share Selected Route</button>
-  </div>
   <div id="route-list" class="route-list"></div>
 </div>
 
@@ -1384,8 +1437,10 @@ function stopWalk() {
     duration,
     distance: dist,
     coords: walkCoords,
-    color: randomColor()
+    color: randomColor(),
+    ...(pendingRouteId ? { routeId: pendingRouteId } : {})
   };
+  pendingRouteId = null;
 
   const walks = loadWalks();
   walks.unshift(walk);
@@ -1499,6 +1554,29 @@ function renderLogs() {
   const container = document.getElementById('logs-list');
   const allWalks = loadWalks();
 
+  // Weekly summary
+  const weekStart = new Date();
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const thisWeek = allWalks.filter(w => new Date(w.date) >= weekStart);
+  const weekKm = thisWeek.reduce((s, w) => s + w.distance, 0);
+  const weekSecs = thisWeek.reduce((s, w) => s + w.duration, 0);
+  document.getElementById('logs-week-summary').innerHTML = `
+    <div class="week-summary">
+      <div class="week-stat">
+        <div class="week-stat-val">${thisWeek.length}</div>
+        <div class="week-stat-lbl">Walks</div>
+      </div>
+      <div class="week-stat">
+        <div class="week-stat-val">${weekKm.toFixed(1)}</div>
+        <div class="week-stat-lbl">km this week</div>
+      </div>
+      <div class="week-stat">
+        <div class="week-stat-val">${formatDuration(weekSecs)}</div>
+        <div class="week-stat-lbl">Time walked</div>
+      </div>
+    </div>`;
+
   // Populate filter dropdown with unique dog/group names
   const filterSel = document.getElementById('logs-filter');
   const currentFilter = filterSel.value;
@@ -1524,13 +1602,14 @@ function renderLogs() {
     const avatarHtml = avatarSrc
       ? `<img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`
       : '🐶';
+    const rating = w.rating ? '🐾'.repeat(w.rating) : '';
     return `
       <div class="walk-card">
         <div class="walk-card-header">
           <div style="display:flex;align-items:center;gap:10px;">
             <div class="walk-card-avatar">${avatarHtml}</div>
             <div>
-              <div class="walk-card-title">${escHtml(w.dog)}</div>
+              <div class="walk-card-title">${escHtml(w.dog)}${rating ? ' <span style="font-size:0.85rem;">' + rating + '</span>' : ''}</div>
               <div class="walk-card-date">${dateStr} at ${timeStr}</div>
             </div>
           </div>
@@ -1542,9 +1621,9 @@ function renderLogs() {
           <span><strong>${w.coords.length}</strong> GPS pts</span>
         </div>
         <div class="walk-actions">
-          <button class="btn-sm btn-view" onclick="viewWalk(${w.id})">View Route</button>
+          <button class="btn-sm btn-view" onclick="viewWalk(${w.id})">View Map</button>
           <button class="btn-sm btn-share" onclick="openShare(${w.id})">Share</button>
-          <button class="btn-sm btn-submit${w.routeId ? ' done' : ''}" onclick="openCreateRouteModal(${w.id})">${w.routeId ? '✓ Route' : '📍 Route'}</button>
+          <button class="btn-sm btn-submit${w.routeId ? ' done' : ''}" onclick="openCreateRouteModal(${w.id})">${w.routeId ? '✓ Saved' : '📍 Save Route'}</button>
           <button class="btn-sm btn-delete" onclick="deleteWalk(${w.id})">Delete</button>
         </div>
       </div>
@@ -1580,19 +1659,11 @@ function escXml(str) {
 // ── Routes tab ───────────────────────────────────────────────────────────────
 let routeMap, routeLayers = {};
 let selectedRouteId = null;
+let pendingRouteId = null; // set when "Start Walk" is tapped from a route card
 
 function renderRoutes() {
-  const allWalks = loadWalks();
+  const routes = loadRoutes();
   const container = document.getElementById('route-list');
-
-  // Populate filter dropdown
-  const filterSel = document.getElementById('routes-filter');
-  const currentFilter = filterSel.value;
-  const names = [...new Set(allWalks.map(w => w.dog))].sort();
-  filterSel.innerHTML = '<option value="">All dogs</option>' +
-    names.map(n => `<option value="${escHtml(n)}"${n === currentFilter ? ' selected' : ''}>${escHtml(n)}</option>`).join('');
-
-  const walks = currentFilter ? allWalks.filter(w => w.dog === currentFilter) : allWalks;
 
   if (!routeMap) {
     routeMap = L.map('route-map').setView([0, 0], 2);
@@ -1601,50 +1672,48 @@ function renderRoutes() {
     }).addTo(routeMap);
   }
 
-  // Clear existing layers
   Object.values(routeLayers).forEach(l => routeMap.removeLayer(l));
   routeLayers = {};
 
-  if (walks.length === 0) {
-    container.innerHTML = currentFilter
-      ? `<div class="empty-state"><div class="icon">🗺️</div><p>No routes for <strong>${escHtml(currentFilter)}</strong> yet.</p></div>`
-      : `<div class="empty-state"><div class="icon">🗺️</div><p>No routes yet.<br>Complete a walk to see routes here.</p></div>`;
+  if (routes.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📍</div><p>No saved routes yet.<br>Complete a walk and tap <strong>Save Route</strong> to add one.</p></div>`;
     routeMap.setView([0, 0], 2);
     return;
   }
 
-  // Draw filtered routes on map
-  const allBounds = [];
-  walks.forEach(w => {
-    if (w.coords.length < 2) return;
-    const poly = L.polyline(w.coords, {
-      color: w.color, weight: 3, opacity: 0.75
-    }).addTo(routeMap);
-    poly.on('click', () => selectRoute(w.id));
-    routeLayers[w.id] = poly;
-    w.coords.forEach(c => allBounds.push(c));
+  routes.forEach(r => {
+    if (!r.coords || r.coords.length < 2) return;
+    const poly = L.polyline(r.coords, { color: '#4a90d9', weight: 3, opacity: 0.75 }).addTo(routeMap);
+    poly.on('click', () => selectSavedRoute(r.id));
+    routeLayers[r.id] = poly;
   });
 
-  if (allBounds.length) {
-    routeMap.fitBounds(allBounds, { padding: [20, 20] });
-  }
+  const allCoords = routes.flatMap(r => r.coords || []);
+  if (allCoords.length) routeMap.fitBounds(allCoords, { padding: [20, 20] });
 
-  // Route list
-  container.innerHTML = walks.map(w => {
-    const date = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+  container.innerHTML = routes.map(r => {
+    const avg = avgPaws(r);
+    const pawHtml = avg > 0
+      ? '🐾'.repeat(Math.round(avg)) + `<span style="opacity:0.25">${'🐾'.repeat(5 - Math.round(avg))}</span>`
+      : '<span style="color:var(--muted);font-size:0.78rem;">No ratings yet</span>';
+    const tagHtml = (r.tags || []).map(t => `<span class="tag-chip" style="pointer-events:none;">${escHtml(t)}</span>`).join('');
     return `
-      <div class="route-item" id="route-item-${w.id}" onclick="selectRoute(${w.id})">
-        <div class="route-dot" style="background:${w.color}"></div>
-        <div>
-          <div class="route-name">🐶 ${escHtml(w.dog)} — ${date}</div>
-          <div class="route-sub">${w.distance.toFixed(2)} km · ${formatDuration(w.duration)}</div>
+      <div class="route-planner-card${selectedRouteId === r.id ? ' selected' : ''}" id="route-item-${r.id}" onclick="selectSavedRoute(${JSON.stringify(r.id)})">
+        <div class="route-planner-name">📍 ${escHtml(r.name)}</div>
+        <div class="route-planner-meta">${r.distance.toFixed(2)} km${r.notes ? ' · ' + escHtml(r.notes) : ''}</div>
+        ${tagHtml ? `<div class="route-planner-tags">${tagHtml}</div>` : ''}
+        <div style="margin-bottom:10px;font-size:0.95rem;">${pawHtml}</div>
+        <div class="route-planner-actions">
+          <button class="btn-sm btn-start" style="flex:1;" onclick="startWalkFromRoute(${JSON.stringify(r.id)});event.stopPropagation();">▶ Start Walk</button>
+          <button class="btn-sm btn-view" onclick="viewRoute(${JSON.stringify(r.id)});event.stopPropagation();">View</button>
+          <button class="btn-sm btn-share" onclick="openShareRoute(${JSON.stringify(r.id)});event.stopPropagation();">Share</button>
         </div>
       </div>
     `;
   }).join('');
 }
 
-function selectRoute(id) {
+function selectSavedRoute(id) {
   if (selectedRouteId) {
     const prev = document.getElementById('route-item-' + selectedRouteId);
     if (prev) prev.classList.remove('selected');
@@ -1652,15 +1721,21 @@ function selectRoute(id) {
   selectedRouteId = id;
   const el = document.getElementById('route-item-' + id);
   if (el) el.classList.add('selected');
-
   const layer = routeLayers[id];
   if (layer) routeMap.fitBounds(layer.getBounds(), { padding: [30, 30] });
-
-  document.getElementById('route-share-bar').style.display = 'block';
 }
 
-function openShareSelected() {
-  if (selectedRouteId) openShare(selectedRouteId);
+function startWalkFromRoute(routeId) {
+  const route = findRouteById(routeId);
+  if (!route) return;
+  pendingRouteId = routeId;
+  showTab('walk', document.querySelector('nav button'));
+  showToast(`Route "${route.name}" selected — start your walk!`);
+}
+
+function openShareRoute(routeId) {
+  const route = findRouteById(routeId);
+  if (route) openRouteShare(route);
 }
 
 // ── View walk / route modal ───────────────────────────────────────────────────
