@@ -1082,9 +1082,6 @@
   <div class="modal">
     <h3 id="share-modal-title">Share</h3>
     <p id="share-walk-info">Walk details</p>
-    <!-- Hidden: still used by copyLink / shareNative / shareWhatsApp -->
-    <div class="share-link-box" id="share-link-text" style="display:none;"></div>
-    <div id="share-link-status" style="display:none;"></div>
     <button id="share-community-btn" class="btn btn-start" style="width:100%;margin-bottom:14px;padding:12px;font-size:0.95rem;" onclick="shareToCommunityfromModal()">📤 Share to Community</button>
     <div class="share-options">
       <div class="share-opt" onclick="copyLink()">
@@ -1767,6 +1764,7 @@ function openShareFromView() {
 
 // ── Share modal ───────────────────────────────────────────────────────────────
 let shareItem = null;
+let shareLinkUrl = ''; // current share URL — kept in memory, not shown in DOM
 
 function updateCommunityBtn(isRoute, alreadyUploaded) {
   const btn = document.getElementById('share-community-btn');
@@ -1880,21 +1878,14 @@ function buildShareLink(item) {
 }
 
 function updateShareLink() {
-  const { link, simplified } = buildShareLink(shareItem);
-  document.getElementById('share-link-text').textContent = link;
-  const chars = link.length;
-  const ok = chars <= SHARE_MAX_CHARS;
-  const status = document.getElementById('share-link-status');
-  status.textContent = `${chars} chars${simplified ? ' · simplified' : ''}${!ok ? ' · may be truncated' : ''}`;
-  status.style.color = ok ? 'var(--success)' : 'var(--danger)';
+  const { link } = buildShareLink(shareItem);
+  shareLinkUrl = link;
 }
 
 function copyLink() {
-  const text = document.getElementById('share-link-text').textContent;
-  navigator.clipboard.writeText(text).then(() => showToast('Link copied!')).catch(() => {
-    // Fallback
+  navigator.clipboard.writeText(shareLinkUrl).then(() => showToast('Link copied!')).catch(() => {
     const ta = document.createElement('textarea');
-    ta.value = text;
+    ta.value = shareLinkUrl;
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
@@ -1906,7 +1897,7 @@ function copyLink() {
 function shareNative() {
   const item = shareItem;
   if (!item) return;
-  const text = document.getElementById('share-link-text').textContent;
+  const text = shareLinkUrl;
   if (navigator.share) {
     const title = item._type === 'route' ? item.name : `${item.dog}'s Walk`;
     const desc = item._type === 'route'
@@ -1921,7 +1912,7 @@ function shareNative() {
 function shareWhatsApp() {
   const item = shareItem;
   if (!item) return;
-  const link = document.getElementById('share-link-text').textContent;
+  const link = shareLinkUrl;
   const msg = item._type === 'route'
     ? encodeURIComponent(`🗺️ Check out this route: ${item.name} — ${item.distance.toFixed(2)} km!\n${link}`)
     : encodeURIComponent(`Check out ${item.dog}'s walk 🐾 — ${item.distance.toFixed(2)} km in ${formatDuration(item.duration)}!\n${link}`);
