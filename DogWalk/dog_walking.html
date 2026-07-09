@@ -1405,8 +1405,8 @@
 // ── Supabase config ──────────────────────────────────────────────────────────
 // The anon key is safe to expose in client-side code when RLS is enabled on
 // every table. It only grants the privileges defined by your RLS policies.
-const SUPABASE_URL      = 'YOUR_SUPABASE_URL';      // e.g. https://xxxx.supabase.co
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Settings → API → anon public
+const SUPABASE_URL      = 'https://rwtseklxhtloknryeame.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_bm92zAIrIvHd0tKUpp_YxQ_Enetpa2V';
 
 const sb = (typeof supabase !== 'undefined' && SUPABASE_URL !== 'YOUR_SUPABASE_URL')
   ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
