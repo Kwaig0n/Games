@@ -1080,10 +1080,12 @@
 <!-- ══════════════ SHARE MODAL ══════════════ -->
 <div class="modal-overlay" id="share-modal">
   <div class="modal">
-    <h3>Share Route</h3>
+    <h3 id="share-modal-title">Share</h3>
     <p id="share-walk-info">Walk details</p>
-    <div class="share-link-box" id="share-link-text"></div>
-    <div id="share-link-status" style="font-size:0.75rem;font-weight:600;margin:-10px 0 14px;text-align:right;"></div>
+    <!-- Hidden: still used by copyLink / shareNative / shareWhatsApp -->
+    <div class="share-link-box" id="share-link-text" style="display:none;"></div>
+    <div id="share-link-status" style="display:none;"></div>
+    <button id="share-community-btn" class="btn btn-start" style="width:100%;margin-bottom:14px;padding:12px;font-size:0.95rem;" onclick="shareToCommunityfromModal()">📤 Share to Community</button>
     <div class="share-options">
       <div class="share-opt" onclick="copyLink()">
         <div class="ico">📋</div>Copy Link
@@ -1766,26 +1768,55 @@ function openShareFromView() {
 // ── Share modal ───────────────────────────────────────────────────────────────
 let shareItem = null;
 
+function updateCommunityBtn(isRoute, alreadyUploaded) {
+  const btn = document.getElementById('share-community-btn');
+  btn.style.display = isRoute ? '' : 'none';
+  if (isRoute && alreadyUploaded) {
+    btn.textContent = '✓ Shared to Community';
+    btn.disabled = true;
+    btn.style.background = 'var(--success)';
+  } else {
+    btn.textContent = '📤 Share to Community';
+    btn.disabled = false;
+    btn.style.background = '';
+  }
+}
+
 function openShare(id) {
   const walk = loadWalks().find(w => w.id === id);
   if (!walk) return;
   shareItem = { ...walk, _type: 'walk' };
+  document.getElementById('share-modal-title').textContent = 'Share Walk';
   document.getElementById('share-walk-info').textContent =
     `${walk.dog} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
   updateShareLink();
+  updateCommunityBtn(false, false);
   document.getElementById('share-modal').classList.add('open');
 }
 
 function openRouteShare(route) {
   shareItem = { ...route, _type: 'route' };
+  document.getElementById('share-modal-title').textContent = 'Share Route';
   document.getElementById('share-walk-info').textContent =
     `${route.name} · ${route.distance.toFixed(2)} km${route.tags && route.tags.length ? ' · ' + route.tags.join(', ') : ''}`;
   updateShareLink();
+  updateCommunityBtn(true, !!route._sbId);
   document.getElementById('share-modal').classList.add('open');
 }
 
 function closeShare() {
   document.getElementById('share-modal').classList.remove('open');
+}
+
+async function shareToCommunityfromModal() {
+  if (!shareItem || shareItem._type !== 'route') return;
+  const btn = document.getElementById('share-community-btn');
+  btn.textContent = '⏳ Uploading…';
+  btn.disabled = true;
+  await uploadRouteToDB(shareItem);
+  // Re-read the (possibly updated) local route to get _sbId
+  const updated = findRouteById(shareItem.id);
+  updateCommunityBtn(true, !!(updated && updated._sbId));
 }
 
 // ── Encoded Polyline Algorithm (Google, 5-decimal precision) ──────────────────
