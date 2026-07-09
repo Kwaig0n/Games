@@ -917,6 +917,26 @@
       border-left: 4px solid var(--primary);
     }
 
+    .nearby-scroll {
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .nearby-show-more {
+      width: 100%;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+      margin-bottom: 14px;
+    }
+    .nearby-show-more:active { background: var(--bg); }
+
     .community-empty {
       font-size: 0.82rem;
       color: var(--muted);
@@ -2280,7 +2300,8 @@ function findNearbyRoutes() {
       return;
     }
 
-    container.innerHTML = nearby.map(({ walk: w, dist }) => {
+    const PREVIEW = 3;
+    const cardHtml = nearby.map(({ walk: w, dist }) => {
       const date = new Date(w.date).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
       const avatarSrc = getAvatarForGroupName(w.dog);
       const avatarHtml = avatarSrc
@@ -2296,13 +2317,32 @@ function findNearbyRoutes() {
           <button class="btn-sm btn-view" onclick="viewWalk(${w.id})" style="flex-shrink:0;">View</button>
         </div>
       `;
-    }).join('') + `<p style="font-size:0.72rem;color:var(--muted);margin-bottom:16px;text-align:right;">${nearby.length} route${nearby.length>1?'s':''} within 3 km</p>`;
+    });
+
+    const showMoreBtn = nearby.length > PREVIEW
+      ? `<button class="nearby-show-more" onclick="expandNearbyRoutes(this)">Show all ${nearby.length} routes ▾</button>`
+      : `<p style="font-size:0.72rem;color:var(--muted);margin-bottom:16px;text-align:right;">${nearby.length} route${nearby.length>1?'s':''} within 3 km</p>`;
+
+    container.innerHTML =
+      `<div class="nearby-scroll" id="nearby-scroll">${cardHtml.slice(0, PREVIEW).join('')}</div>` +
+      `<div id="nearby-hidden" style="display:none;">${cardHtml.slice(PREVIEW).join('')}</div>` +
+      showMoreBtn;
 
   }, err => {
     btn.innerHTML = '<span>📍</span> Find Routes Near Me';
     btn.disabled = false;
     showToast('Could not get location: ' + err.message);
   }, { enableHighAccuracy: true, timeout: 12000 });
+}
+
+function expandNearbyRoutes(btn) {
+  const hidden = document.getElementById('nearby-hidden');
+  const scroll = document.getElementById('nearby-scroll');
+  if (!hidden || !scroll) return;
+  while (hidden.firstChild) scroll.appendChild(hidden.firstChild);
+  hidden.remove();
+  scroll.style.maxHeight = '420px';
+  btn.remove();
 }
 
 const FEATURED_AREAS = [
