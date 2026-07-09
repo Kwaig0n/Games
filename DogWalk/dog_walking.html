@@ -846,6 +846,8 @@
     }
 
     .cat-park      { background: #e6f4ea; color: #2d7a3d; }
+    .cat-dog-park  { background: #e3f2fd; color: #1565c0; }
+    .cat-reserve   { background: #e0f2f1; color: #00695c; }
     .cat-beach     { background: #fff3e0; color: #b06000; }
     .cat-trail     { background: #fce4ec; color: #c62828; }
     .cat-off-leash { background: #e8eaf6; color: #3949ab; }
@@ -2446,40 +2448,36 @@ function renderFeaturedAreas() {
   navigator.geolocation.getCurrentPosition(pos => {
     const { latitude: lat, longitude: lng } = pos.coords;
     const RADIUS_M = 30000;
-    const query = `
-[out:json][timeout:12];
-(
-  node["leisure"="dog_park"](around:${RADIUS_M},${lat},${lng});
-  way["leisure"="dog_park"](around:${RADIUS_M},${lat},${lng});
-  node["leisure"="park"]["name"](around:${RADIUS_M},${lat},${lng});
-  way["leisure"="park"]["name"](around:${RADIUS_M},${lat},${lng});
-  node["leisure"="nature_reserve"]["name"](around:${RADIUS_M},${lat},${lng});
-  way["leisure"="nature_reserve"]["name"](around:${RADIUS_M},${lat},${lng});
-);
-out center 20;`.trim();
+    // Single union query using regex is faster than 6 separate type queries
+    const query = `[out:json][timeout:25];(nwr["leisure"~"^(dog_park|park|nature_reserve)$"]["name"](around:${RADIUS_M},${lat},${lng}););out tags center 30;`;
+
+    const ac = new AbortController();
+    const fetchTimer = setTimeout(() => ac.abort(), 22000);
 
     fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
-      body: query
+      body: query,
+      signal: ac.signal
     })
-    .then(r => r.json())
+    .then(r => { clearTimeout(fetchTimer); if (!r.ok) throw new Error('api'); return r.json(); })
     .then(data => {
-      const areas = data.elements
+      const elements = data.elements || [];
+      const areas = elements
         .filter(e => e.tags && e.tags.name)
         .map(e => {
           const elat = e.lat ?? e.center?.lat;
           const elng = e.lon ?? e.center?.lon;
           const leisure = e.tags.leisure || 'park';
           const isDogPark = leisure === 'dog_park';
-          const dist = haversine([lat, lng], [elat, elng]);
+          const dist = elat != null ? haversine([lat, lng], [elat, elng]) : NaN;
           return { name: e.tags.name, lat: elat, lng: elng, leisure, isDogPark, dist };
         })
-        .filter(a => a.lat != null)
+        .filter(a => a.lat != null && !isNaN(a.dist))
         .sort((a, b) => (a.isDogPark ? -1 : 1) - (b.isDogPark ? -1 : 1) || a.dist - b.dist)
         .slice(0, 12);
 
       if (areas.length === 0) {
-        container.innerHTML = `<p class="community-empty" style="padding:4px 0;">No parks found within 30 km.</p>`;
+        container.innerHTML = `<p class="community-empty" style="padding:4px 0;">No parks found within 30 km. <button class="btn-sm btn-view" style="padding:4px 10px;" onclick="renderFeaturedAreas()">Retry</button></p>`;
         return;
       }
 
@@ -2509,13 +2507,15 @@ out center 20;`.trim();
         ));
       });
     })
-    .catch(() => {
-      container.innerHTML = `<p class="community-empty" style="padding:4px 0;">Couldn't load nearby parks.</p>`;
+    .catch(err => {
+      clearTimeout(fetchTimer);
+      const msg = err.name === 'AbortError' ? 'Search timed out.' : 'Couldn\'t load nearby parks.';
+      container.innerHTML = `<p class="community-empty" style="padding:4px 0;">${msg} <button class="btn-sm btn-view" style="padding:4px 10px;" onclick="renderFeaturedAreas()">Retry</button></p>`;
     });
 
   }, () => {
-    container.innerHTML = `<p class="community-empty" style="padding:4px 0;">Enable location to see parks near you.</p>`;
-  }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 });
+    container.innerHTML = `<p class="community-empty" style="padding:4px 0;">Location access needed. <button class="btn-sm btn-view" style="padding:4px 10px;" onclick="renderFeaturedAreas()">Retry</button></p>`;
+  }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
 }
 
 function openFeaturedArea(lat, lng, name, category) {
