@@ -1108,13 +1108,8 @@
     <span id="gps-quality" style="display:none;font-size:0.72rem;color:var(--danger);font-weight:600;">⚠ GPS: poor signal</span>
   </div>
 
-  <div class="btn-group">
-    <button id="btn-start" class="btn btn-start" onclick="startWalk()">Start Walk</button>
-    <button id="btn-stop" class="btn btn-stop" onclick="stopWalk()" disabled>Stop & Save</button>
-  </div>
-
   <!-- Routes Near Me -->
-  <div style="display:flex;align-items:center;gap:10px;margin-top:16px;margin-bottom:0;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
     <button class="near-me-btn" style="margin-bottom:0;flex:1;" onclick="findNearbyRoutes()">
       <span>📍</span> Find Routes Near Me
     </button>
@@ -1127,6 +1122,11 @@
     </select>
   </div>
   <div id="nearby-routes-list"></div>
+
+  <div class="btn-group">
+    <button id="btn-start" class="btn btn-start" onclick="startWalk()">Start Walk</button>
+    <button id="btn-stop" class="btn btn-stop" onclick="stopWalk()" disabled>Stop & Save</button>
+  </div>
 </div>
 
 <!-- ══════════════ LOGS TAB ══════════════ -->
