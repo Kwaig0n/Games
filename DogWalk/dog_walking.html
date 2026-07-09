@@ -1163,9 +1163,6 @@
       <div class="share-opt" onclick="shareNative()">
         <div class="ico">↗️</div>Share
       </div>
-      <div class="share-opt" onclick="downloadGPX()">
-        <div class="ico">⬇️</div>Download GPX
-      </div>
       <div class="share-opt" onclick="shareWhatsApp()">
         <div class="ico">💬</div>WhatsApp
       </div>
@@ -2014,37 +2011,6 @@ function shareWhatsApp() {
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
-function downloadGPX() {
-  const item = shareItem;
-  if (!item || item.coords.length === 0) return;
-
-  const name = item._type === 'route' ? item.name : `${item.dog}'s Walk`;
-  const dateStr = item._type === 'route' ? item.createdAt : item.date;
-  const pts = item.coords.map(([lat, lng]) =>
-    `    <trkpt lat="${lat}" lon="${lng}"><time>${new Date(dateStr).toISOString()}</time></trkpt>`
-  ).join('\n');
-
-  const nameXml = escXml(name);
-  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="DogWalker">
-  <metadata><name>${nameXml}</name><time>${dateStr}</time></metadata>
-  <trk>
-    <name>${nameXml}</name>
-    <trkseg>
-${pts}
-    </trkseg>
-  </trk>
-</gpx>`;
-
-  const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${name.replace(/\s+/g,'_')}_${item.id || Date.now()}.gpx`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('GPX downloaded!');
-}
 
 // ── Places tab ────────────────────────────────────────────────────────────────
 let placesMap, placeMarkers = {};
