@@ -489,7 +489,7 @@
     .btn-start:disabled { background: #ccc; cursor: default; }
 
     .status-badge {
-      display: inline-block;
+      display: none;
       padding: 4px 10px;
       border-radius: 20px;
       font-size: 0.75rem;
@@ -497,8 +497,84 @@
       margin-bottom: 12px;
     }
 
-    .status-badge.idle { background: #f0f0f0; color: var(--muted); }
-    .status-badge.active { background: #e6f9f0; color: var(--success); }
+    .status-badge.idle { display: none; }
+    .status-badge.active { display: inline-block; background: #e6f9f0; color: var(--success); }
+
+    .last-walk-teaser {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .last-walk-teaser-info { flex: 1; min-width: 0; }
+    .last-walk-teaser-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+    .last-walk-teaser-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .last-walk-teaser-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .nearby-section {
+      margin-bottom: 14px;
+    }
+    .nearby-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+    .nearby-section-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .nearby-section-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nearby-radius-select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 7px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .btn-nearby {
+      background: none;
+      border: 1.5px solid var(--primary);
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--primary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-nearby:active { background: rgba(74,144,217,0.1); }
 
     /* ── Logs tab ── */
     .section-title {
@@ -1103,29 +1179,35 @@
     <div id="selected-group-preview"></div>
   </div>
 
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-    <span id="walk-status" class="status-badge idle">● Idle</span>
-    <span id="gps-quality" style="display:none;font-size:0.72rem;color:var(--danger);font-weight:600;">⚠ GPS: poor signal</span>
-  </div>
-
-  <!-- Routes Near Me -->
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-    <button class="near-me-btn" style="margin-bottom:0;flex:1;" onclick="findNearbyRoutes()">
-      <span>📍</span> Find Routes Near Me
-    </button>
-    <select id="nearby-radius" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 8px;font-size:0.82rem;font-weight:600;color:var(--text);cursor:pointer;flex-shrink:0;">
-      <option value="1">1 km</option>
-      <option value="3" selected>3 km</option>
-      <option value="5">5 km</option>
-      <option value="10">10 km</option>
-      <option value="25">25 km</option>
-    </select>
-  </div>
-  <div id="nearby-routes-list"></div>
-
   <div class="btn-group">
     <button id="btn-start" class="btn btn-start" onclick="startWalk()">Start Walk</button>
     <button id="btn-stop" class="btn btn-stop" onclick="stopWalk()" disabled>Stop & Save</button>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+    <span id="walk-status" class="status-badge idle">● Active</span>
+    <span id="gps-quality" style="display:none;font-size:0.72rem;color:var(--danger);font-weight:600;">⚠ GPS: poor signal</span>
+  </div>
+
+  <!-- Last walk teaser -->
+  <div id="last-walk-teaser"></div>
+
+  <!-- Routes Near Me -->
+  <div class="nearby-section">
+    <div class="nearby-section-header">
+      <span class="nearby-section-label">📍 Routes Near Me</span>
+      <div class="nearby-section-controls">
+        <select id="nearby-radius" class="nearby-radius-select">
+          <option value="1">1 km</option>
+          <option value="3" selected>3 km</option>
+          <option value="5">5 km</option>
+          <option value="10">10 km</option>
+          <option value="25">25 km</option>
+        </select>
+        <button class="btn-nearby" onclick="findNearbyRoutes()">Search</button>
+      </div>
+    </div>
+    <div id="nearby-routes-list"></div>
   </div>
 </div>
 
@@ -1481,6 +1563,7 @@ function stopWalk() {
   document.getElementById('map').style.display = 'none';
   document.getElementById('walk-stats').style.display = 'none';
 
+  renderLastWalkTeaser();
   openWalkRatingModal(walk);
 }
 
@@ -3190,11 +3273,37 @@ function migrateSubmittedWalks() {
   if (walksChanged) saveWalks(walks);
 }
 
+function renderLastWalkTeaser() {
+  const el = document.getElementById('last-walk-teaser');
+  if (!el) return;
+  const walks = loadWalks();
+  if (walks.length === 0) { el.innerHTML = ''; return; }
+  const w = walks[0];
+  const date = new Date(w.date);
+  const dateStr = date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  const avatarSrc = getAvatarForGroupName(w.dog);
+  const avatarHtml = avatarSrc
+    ? `<img src="${avatarSrc}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;" />`
+    : `<div style="width:40px;height:40px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">🐶</div>`;
+  const rating = w.rating ? ' · ' + '🐾'.repeat(w.rating) : '';
+  el.innerHTML = `
+    <div class="last-walk-teaser" onclick="viewWalk(${w.id})" style="cursor:pointer;">
+      ${avatarHtml}
+      <div class="last-walk-teaser-info">
+        <div class="last-walk-teaser-label">Last walk</div>
+        <div class="last-walk-teaser-title">${escHtml(w.dog)}${rating}</div>
+        <div class="last-walk-teaser-meta">${dateStr} · ${w.distance.toFixed(2)} km · ${formatDuration(w.duration)}</div>
+      </div>
+      <div style="font-size:1.2rem;color:var(--muted);">›</div>
+    </div>`;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 migrateSubmittedWalks();
 checkSharedRoute();
 renderGroupDropdown();
 fetchWeather();
+renderLastWalkTeaser();
 
 document.getElementById('dog-profile-avatar-input').addEventListener('change', handleDogAvatarUpload);
 
