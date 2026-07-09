@@ -2435,56 +2435,87 @@ function expandNearbyRoutes(btn) {
   btn.remove();
 }
 
-const FEATURED_AREAS = [
-  { name: 'Centennial Park', city: 'Sydney, AU', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: -33.8978, lng: 151.2321, desc: 'Huge off-leash areas & lake walks' },
-  { name: 'Princes Park', city: 'Melbourne, AU', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: -37.7833, lng: 144.9669, desc: 'Popular loop track, always busy' },
-  { name: 'South Bank Parklands', city: 'Brisbane, AU', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: -27.4785, lng: 153.0235, desc: 'River views, paths for all sizes' },
-  { name: 'Kings Park', city: 'Perth, AU', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: -31.9601, lng: 115.8312, desc: 'Vast bushland & city views' },
-  { name: 'Bondi Beach Path', city: 'Sydney, AU', category: 'Trail', icon: '🥾', color: '#fce4ec', lat: -33.8915, lng: 151.2767, desc: 'Iconic clifftop coastal walk' },
-  { name: 'Hyde Park', city: 'London, UK', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: 51.5073, lng: -0.1657, desc: 'Famous off-leash area in central London' },
-  { name: 'Central Park', city: 'New York, US', category: 'Park', icon: '🌳', color: '#e6f4ea', lat: 40.7851, lng: -73.9683, desc: 'Dog runs & endless trails' },
-  { name: 'Hampstead Heath', city: 'London, UK', category: 'Forest', icon: '🌲', color: '#e0f2f1', lat: 51.5617, lng: -0.1568, desc: 'Wild woodland, ponds & meadows' },
-];
-
-function renderFeaturedAreas(userLat, userLng) {
+function renderFeaturedAreas() {
   const container = document.getElementById('featured-areas');
-  const RADIUS_KM = 30;
-
-  let areas = FEATURED_AREAS;
-  if (userLat != null && userLng != null) {
-    areas = FEATURED_AREAS
-      .map(a => ({ ...a, dist: haversine([userLat, userLng], [a.lat, a.lng]) }))
-      .filter(a => a.dist <= RADIUS_KM)
-      .sort((a, b) => a.dist - b.dist);
-  }
-
-  if (areas.length === 0) {
-    container.innerHTML = `<p class="community-empty" style="padding:4px 0;">No popular areas within ${RADIUS_KM} km of your location.</p>`;
+  if (!navigator.geolocation) {
+    container.innerHTML = `<p class="community-empty" style="padding:4px 0;">Enable location to see parks near you.</p>`;
     return;
   }
+  container.innerHTML = `<p class="community-empty" style="padding:4px 0;">📡 Finding parks near you…</p>`;
 
-  container.innerHTML = areas.map(a => `
-    <div class="featured-card"
-         data-lat="${a.lat}" data-lng="${a.lng}"
-         data-name="${escHtml(a.name)}" data-category="${escHtml(a.category)}">
-      <div class="featured-card-banner" style="background:${a.color};">${a.icon}</div>
-      <div class="featured-card-body">
-        <div class="featured-card-name">${escHtml(a.name)}</div>
-        <div class="featured-card-sub">${escHtml(a.city)}${a.dist != null ? ` · ${a.dist.toFixed(1)} km` : ''}</div>
-        <div class="featured-card-sub" style="font-size:0.68rem;margin-bottom:6px;">${escHtml(a.desc)}</div>
-        <span class="category-badge cat-${a.category.toLowerCase().replace(/[^a-z]/g,'-')}">${escHtml(a.category)}</span>
-      </div>
-    </div>
-  `).join('');
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    const RADIUS_M = 30000;
+    const query = `
+[out:json][timeout:12];
+(
+  node["leisure"="dog_park"](around:${RADIUS_M},${lat},${lng});
+  way["leisure"="dog_park"](around:${RADIUS_M},${lat},${lng});
+  node["leisure"="park"]["name"](around:${RADIUS_M},${lat},${lng});
+  way["leisure"="park"]["name"](around:${RADIUS_M},${lat},${lng});
+  node["leisure"="nature_reserve"]["name"](around:${RADIUS_M},${lat},${lng});
+  way["leisure"="nature_reserve"]["name"](around:${RADIUS_M},${lat},${lng});
+);
+out center 20;`.trim();
 
-  container.querySelectorAll('.featured-card').forEach(card => {
-    card.addEventListener('click', () => openFeaturedArea(
-      parseFloat(card.dataset.lat),
-      parseFloat(card.dataset.lng),
-      card.dataset.name,
-      card.dataset.category
-    ));
-  });
+    fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: query
+    })
+    .then(r => r.json())
+    .then(data => {
+      const areas = data.elements
+        .filter(e => e.tags && e.tags.name)
+        .map(e => {
+          const elat = e.lat ?? e.center?.lat;
+          const elng = e.lon ?? e.center?.lon;
+          const leisure = e.tags.leisure || 'park';
+          const isDogPark = leisure === 'dog_park';
+          const dist = haversine([lat, lng], [elat, elng]);
+          return { name: e.tags.name, lat: elat, lng: elng, leisure, isDogPark, dist };
+        })
+        .filter(a => a.lat != null)
+        .sort((a, b) => (a.isDogPark ? -1 : 1) - (b.isDogPark ? -1 : 1) || a.dist - b.dist)
+        .slice(0, 12);
+
+      if (areas.length === 0) {
+        container.innerHTML = `<p class="community-empty" style="padding:4px 0;">No parks found within 30 km.</p>`;
+        return;
+      }
+
+      const icon = a => a.isDogPark ? '🐕' : a.leisure === 'nature_reserve' ? '🌲' : '🌳';
+      const color = a => a.isDogPark ? '#e3f2fd' : a.leisure === 'nature_reserve' ? '#e0f2f1' : '#e6f4ea';
+      const label = a => a.isDogPark ? 'Dog Park' : a.leisure === 'nature_reserve' ? 'Reserve' : 'Park';
+
+      container.innerHTML = areas.map(a => `
+        <div class="featured-card"
+             data-lat="${a.lat}" data-lng="${a.lng}"
+             data-name="${escHtml(a.name)}" data-category="${escHtml(label(a))}">
+          <div class="featured-card-banner" style="background:${color(a)};">${icon(a)}</div>
+          <div class="featured-card-body">
+            <div class="featured-card-name">${escHtml(a.name)}</div>
+            <div class="featured-card-sub">${a.dist.toFixed(1)} km away</div>
+            <span class="category-badge cat-${label(a).toLowerCase().replace(/[^a-z]/g,'-')}">${label(a)}</span>
+          </div>
+        </div>
+      `).join('');
+
+      container.querySelectorAll('.featured-card').forEach(card => {
+        card.addEventListener('click', () => openFeaturedArea(
+          parseFloat(card.dataset.lat),
+          parseFloat(card.dataset.lng),
+          card.dataset.name,
+          card.dataset.category
+        ));
+      });
+    })
+    .catch(() => {
+      container.innerHTML = `<p class="community-empty" style="padding:4px 0;">Couldn't load nearby parks.</p>`;
+    });
+
+  }, () => {
+    container.innerHTML = `<p class="community-empty" style="padding:4px 0;">Enable location to see parks near you.</p>`;
+  }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 });
 }
 
 function openFeaturedArea(lat, lng, name, category) {
@@ -2692,14 +2723,7 @@ function findRouteById(id) {
 }
 
 function renderPlaces() {
-  renderFeaturedAreas(null, null); // render immediately with no filter
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => renderFeaturedAreas(pos.coords.latitude, pos.coords.longitude),
-      () => {}, // silently keep unfiltered on deny
-      { enableHighAccuracy: false, timeout: 6000, maximumAge: 120000 }
-    );
-  }
+  renderFeaturedAreas();
   renderCommunityRoutes();
   renderTopRoutes();
   const places = loadPlaces();
