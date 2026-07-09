@@ -3350,8 +3350,6 @@ renderGroupDropdown();
 fetchWeather();
 renderLastWalkTeaser();
 
-document.getElementById('dog-profile-avatar-input').addEventListener('change', handleDogAvatarUpload);
-
 // Re-acquire wake lock when the tab becomes visible again (locks are auto-released on hide)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && isWalking) {
@@ -3373,7 +3371,7 @@ window.addEventListener('beforeunload', e => {
     <div class="dog-profile-title" id="dog-profile-modal-title">Add Dogs</div>
     <div id="modal-dogs-list"></div>
     <button class="add-dog-btn" onclick="addModalDog()">+ Add another dog</button>
-    <input id="dog-profile-avatar-input" type="file" accept="image/*" style="display:none" />
+    <input id="dog-profile-avatar-input" type="file" accept="image/*" style="display:none" onchange="handleDogAvatarUpload(event)" />
     <div id="group-name-row" style="display:none;">
       <label>Group name</label>
       <input id="group-name-input" type="text" placeholder="e.g. The Pack" />
