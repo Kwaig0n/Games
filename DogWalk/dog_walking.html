@@ -3506,10 +3506,15 @@ async function loadRoutePhotos(sbId) {
     strip.innerHTML = `<span class="route-photo-empty">No photos yet — be the first to add one!</span>`;
     return;
   }
+  const MAX_PHOTOS = 5;
+  if (addBtn) addBtn.style.display = data.length >= MAX_PHOTOS ? 'none' : '';
   strip.innerHTML = data.map(p => {
     const url = `${SUPABASE_URL}/storage/v1/object/public/route-photos/${p.storage_path}`;
     return `<img class="route-photo-thumb" src="${url}" onclick="openPhotoFullscreen('${url}')" />`;
   }).join('');
+  if (data.length >= MAX_PHOTOS) {
+    strip.insertAdjacentHTML('afterend', '<span class="route-photo-empty" style="display:block;margin-top:4px;">5/5 photos — limit reached</span>');
+  }
 }
 
 function openPhotoFullscreen(url) {
@@ -3525,6 +3530,8 @@ async function handleRoutePhotoUpload(event) {
   event.target.value = '';
   if (!file || !currentPhotoRouteId || !sb) return;
   const addBtn = document.getElementById('route-add-photo-btn');
+  const { count } = await sb.from('route_photos').select('*', { count: 'exact', head: true }).eq('route_id', currentPhotoRouteId);
+  if (count >= 5) { showToast('Max 5 photos per route'); return; }
   if (addBtn) { addBtn.textContent = '⏳ Uploading…'; addBtn.disabled = true; }
 
   const dataUrl = await new Promise(resolve => {
