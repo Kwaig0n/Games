@@ -1256,6 +1256,10 @@
     <button id="btn-start" class="btn btn-start" onclick="openChecklist()">Start Walk</button>
     <button id="btn-stop" class="btn btn-stop" onclick="stopWalk()" disabled>Stop & Save</button>
   </div>
+  <div id="walk-photo-bar" style="display:none;margin-bottom:12px;">
+    <button class="btn" id="btn-walk-photo" style="width:100%;background:var(--card);color:var(--text);border:2px dashed var(--border);padding:12px;font-size:0.95rem;" onclick="document.getElementById('walk-photo-input').click()">📷 Add Photo</button>
+    <input id="walk-photo-input" type="file" accept="image/*" capture="environment" style="display:none" onchange="captureWalkPhoto(event)" />
+  </div>
 
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
     <span id="walk-status" class="status-badge idle">● Active</span>
@@ -1390,7 +1394,12 @@
       <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:5px;">Rate this route</div>
       <div class="paw-rating-row" id="view-route-paw-row"></div>
     </div>
-    <!-- Photo strip -->
+    <!-- Walk photos (local, shown when viewing a walk) -->
+    <div id="walk-photos-section" style="display:none;margin-bottom:12px;">
+      <div style="font-size:0.78rem;font-weight:600;color:var(--muted);margin-bottom:8px;">Photos</div>
+      <div id="walk-photos-strip" class="route-photos-strip"></div>
+    </div>
+    <!-- Route photo strip -->
     <div id="route-photos-section" style="margin-bottom:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:0.78rem;font-weight:600;color:var(--muted);">Photos</span>
@@ -1546,6 +1555,7 @@ function initWalkMap() {
 let isWalking = false;
 let walkCoords = [];
 let walkStart = null;
+let walkPhotos = [];
 let timerInterval = null;
 let watchId = null;
 let lastAcceptedCoord = null;
@@ -1588,6 +1598,9 @@ async function startWalk() {
   walkStart = Date.now();
   lastAcceptedCoord = null;
   accuracyRejectWindow = [];
+  walkPhotos = [];
+  document.getElementById('walk-photo-bar').style.display = '';
+  document.getElementById('btn-walk-photo').textContent = '📷 Add Photo';
   walkPolyline.setLatLngs([]);
 
   document.getElementById('btn-start').disabled = true;
@@ -1623,6 +1636,7 @@ function stopWalk() {
   document.getElementById('walk-status').textContent = '● Idle';
   document.getElementById('walk-status').className = 'status-badge idle';
   document.getElementById('gps-quality').style.display = 'none';
+  document.getElementById('walk-photo-bar').style.display = 'none';
 
   if (walkCoords.length >= 2) {
     walkMap.fitBounds(walkPolyline.getBounds(), { padding: [30, 30] });
@@ -1647,8 +1661,10 @@ function stopWalk() {
     distance: dist,
     coords: walkCoords,
     color: randomColor(),
-    ...(pendingRouteId ? { routeId: pendingRouteId } : {})
+    ...(pendingRouteId ? { routeId: pendingRouteId } : {}),
+    ...(walkPhotos.length ? { photos: walkPhotos } : {})
   };
+  walkPhotos = [];
   pendingRouteId = null;
 
   const walks = loadWalks();
@@ -1961,6 +1977,18 @@ function viewWalk(id) {
   document.getElementById('view-info').textContent =
     `${new Date(walk.date).toLocaleString()} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
   document.getElementById('view-route-meta').style.display = 'none';
+  document.getElementById('route-photos-section').style.display = 'none';
+
+  const walkPhotosSection = document.getElementById('walk-photos-section');
+  const walkPhotosStrip = document.getElementById('walk-photos-strip');
+  if (walk.photos && walk.photos.length) {
+    walkPhotosSection.style.display = '';
+    walkPhotosStrip.innerHTML = walk.photos.map(url =>
+      `<img class="route-photo-thumb" src="${url}" onclick="openPhotoFullscreen('${url}')" />`
+    ).join('');
+  } else {
+    walkPhotosSection.style.display = 'none';
+  }
 
   document.getElementById('view-modal').classList.add('open');
   openMiniMap(walk.coords, walk.color || '#4a90d9');
@@ -2024,6 +2052,8 @@ function viewRoute(id) {
     }
   });
 
+  document.getElementById('walk-photos-section').style.display = 'none';
+  document.getElementById('route-photos-section').style.display = '';
   const sbId = route._sbId || (route._source === 'remote' ? String(route.id) : null);
   loadRoutePhotos(sbId);
 
@@ -3482,6 +3512,32 @@ function renderLastWalkTeaser() {
       </div>
       <div style="font-size:1.2rem;color:var(--muted);">›</div>
     </div>`;
+}
+
+// ── Walk photos (captured during active walk, stored locally with walk) ───────
+async function captureWalkPhoto(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file || !isWalking) return;
+  const btn = document.getElementById('btn-walk-photo');
+  if (btn) { btn.textContent = '⏳ Processing…'; btn.disabled = true; }
+
+  const dataUrl = await new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 900;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale; canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = URL.createObjectURL(file);
+  });
+
+  walkPhotos.push(dataUrl);
+  if (btn) { btn.textContent = `📷 Add Photo (${walkPhotos.length})`; btn.disabled = false; }
+  showToast(`Photo ${walkPhotos.length} captured! 📸`);
 }
 
 // ── Route photos ─────────────────────────────────────────────────────────────
