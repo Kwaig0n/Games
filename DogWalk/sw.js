@@ -1,8 +1,6 @@
-const CACHE = 'dogwalk-v1';
-const LOCAL = ['./dog_walking.html', './manifest.json'];
+const CACHE = 'dogwalk-v3';
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(LOCAL)));
   self.skipWaiting();
 });
 
@@ -16,14 +14,7 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Cache-first for local assets; network-first for external (maps, weather, APIs)
-  if (e.request.url.startsWith(self.location.origin)) {
-    e.respondWith(
-      caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return res;
-      }))
-    );
-  }
+  // Always network-first for the HTML so updates reach users immediately
+  // Cache nothing — keeps the app always fresh
+  if (e.request.mode === 'navigate') return;
 });
