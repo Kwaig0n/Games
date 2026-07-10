@@ -51,3 +51,19 @@ create policy "public insert" on route_photos for insert with check (true);
 -- Storage bucket (run once in Supabase dashboard → Storage)
 -- insert into storage.buckets (id, name, public) values ('route-photos', 'route-photos', true)
 --   on conflict (id) do nothing;
+
+-- Like / dislike reactions on routes
+create table if not exists route_reactions (
+  id         uuid primary key default gen_random_uuid(),
+  route_id   uuid references routes(id) on delete cascade,
+  reaction   text check (reaction in ('like', 'dislike')),
+  device_id  text,
+  created_at timestamptz default now(),
+  unique (route_id, device_id)
+);
+
+alter table route_reactions enable row level security;
+
+create policy "public read"   on route_reactions for select using (true);
+create policy "public insert" on route_reactions for insert with check (true);
+create policy "public update" on route_reactions for update using (true);
