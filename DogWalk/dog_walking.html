@@ -1334,10 +1334,6 @@
   </div>
   <div class="cr-filter-bar" id="cr-filter-bar" style="display:none;">
     <div class="cr-filter-row" id="cr-tag-filter-row"></div>
-    <div class="cr-filter-paw-row">
-      <span class="cr-paw-label">Min</span>
-      <div id="cr-paw-filter-row" class="cr-paw-inner"></div>
-    </div>
   </div>
   <div id="community-routes-list"></div>
 
@@ -1422,10 +1418,12 @@
     <h3 id="view-title">Route</h3>
     <p id="view-info"></p>
     <div id="view-route-meta" style="display:none;margin-bottom:12px;">
-      <div id="view-route-paw-avg" style="margin-bottom:8px;"></div>
       <div id="view-route-tag-chips" class="tag-chips-row" style="margin-bottom:10px;"></div>
-      <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:5px;">Rate this route</div>
-      <div class="paw-rating-row" id="view-route-paw-row"></div>
+      <div id="view-route-rating-section">
+        <div id="view-route-paw-avg" style="margin-bottom:8px;"></div>
+        <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:5px;">Rate this route</div>
+        <div class="paw-rating-row" id="view-route-paw-row"></div>
+      </div>
       <!-- Like / dislike (community routes only) -->
       <div id="route-reactions-row" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:none;">
         <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:8px;">Was this route helpful?</div>
@@ -2100,7 +2098,9 @@ function viewRoute(id) {
 
   const meta = document.getElementById('view-route-meta');
   meta.style.display = '';
-  document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(route);
+  const ratingSec = document.getElementById('view-route-rating-section');
+  ratingSec.style.display = isRemote ? 'none' : '';
+  if (!isRemote) document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(route);
 
   const viewTagSet = new Set(route.tags || []);
   buildTagChips('view-route-tag-chips', viewTagSet, (tag, sel) => {
@@ -2118,22 +2118,9 @@ function viewRoute(id) {
     }
   });
 
-  buildPawRow('view-route-paw-row', 0, async n => {
-    const entry = { stars: n, date: new Date().toISOString() };
-    if (isRemote) {
-      const ok = await rateRouteInDB(id, n);
-      if (ok) {
-        const ci = communityRoutesCache.findIndex(r => r.id === id);
-        if (ci !== -1) {
-          communityRoutesCache[ci].ratings.push(entry);
-          saveCommunityCache(communityRoutesCache);
-          currentViewItem.data = communityRoutesCache[ci];
-          document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(communityRoutesCache[ci]);
-          showCommunityRoutes(mergeWithLocalRoutes(communityRoutesCache));
-        }
-        showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
-      }
-    } else {
+  if (!isRemote) {
+    buildPawRow('view-route-paw-row', 0, n => {
+      const entry = { stars: n, date: new Date().toISOString() };
       const routes = loadRoutes();
       const idx = routes.findIndex(r => r.id === id);
       if (idx !== -1) {
@@ -2144,8 +2131,8 @@ function viewRoute(id) {
         document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(routes[idx]);
         showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
       }
-    }
-  });
+    });
+  }
 
   document.getElementById('walk-photos-section').style.display = 'none';
   document.getElementById('route-photos-section').style.display = '';
@@ -2547,7 +2534,7 @@ function toggleCRFilter() {
 }
 
 function updateCRFilterCount() {
-  const count = communityTagFilter.size + (communityMinPaws > 0 ? 1 : 0);
+  const count = communityTagFilter.size;
   const el = document.getElementById('cr-filter-count');
   if (el) el.textContent = count > 0 ? `(${count})` : '';
   const btn = document.getElementById('cr-filter-toggle');
@@ -2575,19 +2562,6 @@ function showCommunityRoutes(allRoutes) {
     applyRouteFilters(allRoutes);
   });
 
-  const pawRow = document.getElementById('cr-paw-filter-row');
-  pawRow.innerHTML = ['Any', '1🐾', '2🐾', '3🐾', '4🐾', '5🐾'].map((label, i) =>
-    `<button class="cr-paw-btn${communityMinPaws === i ? ' selected' : ''}" data-min="${i}">${label}</button>`
-  ).join('');
-  pawRow.querySelectorAll('.cr-paw-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      communityMinPaws = parseInt(btn.dataset.min, 10);
-      pawRow.querySelectorAll('.cr-paw-btn').forEach(b => b.classList.toggle('selected', b === btn));
-      updateCRFilterCount();
-      applyRouteFilters(allRoutes);
-    });
-  });
-
   updateCRFilterCount();
   applyRouteFilters(allRoutes);
 }
@@ -2601,10 +2575,6 @@ function applyRouteFilters(allRoutes) {
       [...communityTagFilter].every(t => (r.tags || []).includes(t))
     );
   }
-  if (communityMinPaws > 0) {
-    routes = routes.filter(r => avgPaws(r) >= communityMinPaws);
-  }
-
   if (routes.length === 0) {
     container.innerHTML = `<p class="community-empty">No routes match the current filters.</p>`;
     return;
@@ -2616,12 +2586,9 @@ function applyRouteFilters(allRoutes) {
   const TOP = 5;
   const makeCard = r => {
     const date = new Date(r.createdAt).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
-    const avg = avgPaws(r);
-    const count = (r.ratings || []).length;
-    const pawStr = count > 0 ? `${'🐾'.repeat(Math.round(avg))} ${avg.toFixed(1)}` : '';
     const tagStr = (r.tags || []).slice(0, 2).map(t => escHtml(t)).join(' · ');
     const likesStr = (r._likes || 0) > 0 ? `${r._likes} vote${r._likes === 1 ? '' : 's'}` : '';
-    const meta = [likesStr, pawStr, tagStr].filter(Boolean).join('  ·  ');
+    const meta = [likesStr, tagStr].filter(Boolean).join('  ·  ');
     return `<div class="cr-route-row" data-route-id="${escHtml(String(r.id))}">
       <div class="cr-route-icon">🗺️</div>
       <div class="cr-route-info">
