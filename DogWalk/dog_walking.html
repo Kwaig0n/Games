@@ -1314,7 +1314,7 @@
   <div class="modal">
     <h3 id="share-modal-title">Share</h3>
     <p id="share-walk-info">Walk details</p>
-    <button id="share-community-btn" class="btn btn-start" style="width:100%;margin-bottom:14px;padding:12px;font-size:0.95rem;" onclick="shareToCommunityfromModal()">📤 Share to Community</button>
+    <button id="share-community-btn" class="btn btn-start" style="display:none;width:100%;margin-bottom:14px;padding:12px;font-size:0.95rem;" onclick="shareToCommunityfromModal()">📤 Share to Community</button>
     <div class="share-options">
       <div class="share-opt" onclick="copyLink()">
         <div class="ico">📋</div>Copy Link
@@ -1863,8 +1863,8 @@ function renderRoutes() {
         <div class="route-planner-actions">
           <button class="btn-sm btn-start" style="flex:1;" onclick="startWalkFromRoute(${JSON.stringify(r.id)});event.stopPropagation();">▶ Start Walk</button>
           <button class="btn-sm btn-view" onclick="viewRoute(${JSON.stringify(r.id)});event.stopPropagation();">View</button>
-          <button class="btn-sm btn-share" onclick="openShareRoute(${JSON.stringify(r.id)});event.stopPropagation();">Share</button>
         </div>
+        <button class="btn-sm ${r._sbId ? 'btn-submit done' : 'btn-share'}" id="community-btn-${r.id}" style="width:100%;margin-top:8px;" onclick="shareRouteToCommmunity(${JSON.stringify(r.id)});event.stopPropagation();">${r._sbId ? '✓ Shared to Community' : '📤 Share to Community'}</button>
       </div>
     `;
   }).join('');
@@ -2064,9 +2064,27 @@ async function shareToCommunityfromModal() {
   btn.textContent = '⏳ Uploading…';
   btn.disabled = true;
   await uploadRouteToDB(shareItem);
-  // Re-read the (possibly updated) local route to get _sbId
   const updated = findRouteById(shareItem.id);
   updateCommunityBtn(true, !!(updated && updated._sbId));
+}
+
+async function shareRouteToCommmunity(routeId) {
+  const route = findRouteById(routeId);
+  if (!route) return;
+  if (route._sbId) { showToast('Already shared to community!'); return; }
+  const btn = document.getElementById('community-btn-' + routeId);
+  if (btn) { btn.textContent = '⏳ Uploading…'; btn.disabled = true; }
+  await uploadRouteToDB(route);
+  const updated = findRouteById(routeId);
+  if (btn) {
+    if (updated && updated._sbId) {
+      btn.textContent = '✓ Shared to Community';
+      btn.className = btn.className.replace('btn-share', 'btn-submit done');
+    } else {
+      btn.textContent = '📤 Share to Community';
+      btn.disabled = false;
+    }
+  }
 }
 
 // ── Encoded Polyline Algorithm (Google, 5-decimal precision) ──────────────────
@@ -2297,10 +2315,7 @@ function confirmCreateRoute() {
   closeCreateRouteModal();
   renderLogs();
   if (document.getElementById('tab-places').classList.contains('active')) renderPlaces();
-
-  uploadRouteToDB(route); // fire-and-forget; toast on success/failure
-
-  openRouteShare(route);
+  showToast('Route saved! Go to Routes tab to share it to the community.');
 }
 
 // ── Community Routes ──────────────────────────────────────────────────────────
