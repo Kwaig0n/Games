@@ -1098,32 +1098,34 @@
     }
 
     /* ── Community routes filter ── */
-    .cr-filter-bar { margin-bottom: 14px; }
-    .cr-filter-label {
-      font-size: 0.73rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 5px;
+    .cr-filter-toggle {
+      font-size: 0.78rem; font-weight: 600; color: var(--primary);
+      background: none; border: 1.5px solid var(--primary);
+      border-radius: 20px; padding: 4px 12px; cursor: pointer;
     }
-    .cr-filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .cr-filter-toggle.active { background: var(--primary); color: #fff; }
+    #cr-filter-count { font-size: 0.72rem; }
+    .cr-filter-bar {
+      background: var(--bg); border-radius: 12px;
+      padding: 10px 12px; margin-bottom: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .cr-filter-row {
+      display: flex; flex-wrap: nowrap; gap: 6px;
+      overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+    }
+    .cr-filter-row::-webkit-scrollbar { display: none; }
+    .cr-filter-paw-row { display: flex; align-items: center; gap: 8px; }
+    .cr-paw-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .cr-paw-inner { display: flex; gap: 5px; }
     .cr-paw-btn {
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      background: var(--bg);
-      font-size: 0.78rem;
-      font-weight: 700;
-      cursor: pointer;
-      color: var(--muted);
+      padding: 3px 9px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: var(--card);
+      font-size: 0.75rem; font-weight: 700; cursor: pointer;
+      color: var(--muted); white-space: nowrap;
       transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
-    .cr-paw-btn.selected {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-    }
+    .cr-paw-btn.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
     #splash {
       position: fixed; inset: 0; z-index: 9999;
       background: var(--primary);
@@ -1276,12 +1278,16 @@
   <div class="featured-scroll" id="featured-areas"></div>
 
   <!-- Community Routes -->
-  <div class="section-title" style="margin-top:20px;margin-bottom:10px;">Community Routes</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px;">
+    <div class="section-title" style="margin:0;">Community Routes</div>
+    <button class="cr-filter-toggle" id="cr-filter-toggle" style="display:none;" onclick="toggleCRFilter()">⚙ Filter <span id="cr-filter-count"></span></button>
+  </div>
   <div class="cr-filter-bar" id="cr-filter-bar" style="display:none;">
-    <div class="cr-filter-label">Filter by tag</div>
     <div class="cr-filter-row" id="cr-tag-filter-row"></div>
-    <div class="cr-filter-label">Min paw score</div>
-    <div class="cr-filter-row" id="cr-paw-filter-row"></div>
+    <div class="cr-filter-paw-row">
+      <span class="cr-paw-label">Min</span>
+      <div id="cr-paw-filter-row" class="cr-paw-inner"></div>
+    </div>
   </div>
   <div id="community-routes-list"></div>
 
@@ -2333,6 +2339,7 @@ function renderCommunityRoutes() {
   // Show loading state, then fetch fresh data from Supabase
   container.innerHTML = `<p class="community-empty">📡 Loading routes near you…</p>`;
   document.getElementById('cr-filter-bar').style.display = 'none';
+  document.getElementById('cr-filter-toggle').style.display = 'none';
 
   if (!navigator.geolocation) {
     showCommunityRoutes(mergeWithLocalRoutes(communityRoutesCache));
@@ -2352,33 +2359,59 @@ function renderCommunityRoutes() {
   );
 }
 
+let crFilterOpen = false;
+
+function toggleCRFilter() {
+  crFilterOpen = !crFilterOpen;
+  const bar = document.getElementById('cr-filter-bar');
+  const btn = document.getElementById('cr-filter-toggle');
+  bar.style.display = crFilterOpen ? '' : 'none';
+  btn.classList.toggle('active', crFilterOpen);
+}
+
+function updateCRFilterCount() {
+  const count = communityTagFilter.size + (communityMinPaws > 0 ? 1 : 0);
+  const el = document.getElementById('cr-filter-count');
+  if (el) el.textContent = count > 0 ? `(${count})` : '';
+  const btn = document.getElementById('cr-filter-toggle');
+  if (btn) btn.classList.toggle('active', crFilterOpen || count > 0);
+}
+
 function showCommunityRoutes(allRoutes) {
   const container = document.getElementById('community-routes-list');
+  const filterToggle = document.getElementById('cr-filter-toggle');
+  const filterBar = document.getElementById('cr-filter-bar');
 
   if (allRoutes.length === 0) {
-    document.getElementById('cr-filter-bar').style.display = 'none';
+    filterToggle.style.display = 'none';
+    filterBar.style.display = 'none';
     container.innerHTML = `<p class="community-empty">No shared routes nearby yet. Save a walk as a route and share it to see it here.</p>`;
     return;
   }
 
-  const filterBar = document.getElementById('cr-filter-bar');
-  filterBar.style.display = '';
+  filterToggle.style.display = '';
+  if (crFilterOpen) filterBar.style.display = '';
+
   buildTagChips('cr-tag-filter-row', communityTagFilter, (tag, sel) => {
     if (sel) communityTagFilter.add(tag); else communityTagFilter.delete(tag);
+    updateCRFilterCount();
     applyRouteFilters(allRoutes);
   });
+
   const pawRow = document.getElementById('cr-paw-filter-row');
-  pawRow.innerHTML = ['Any', ...[1,2,3,4,5].map(n => '🐾'.repeat(n))].map((label, i) =>
+  pawRow.innerHTML = ['Any', '1🐾', '2🐾', '3🐾', '4🐾', '5🐾'].map((label, i) =>
     `<button class="cr-paw-btn${communityMinPaws === i ? ' selected' : ''}" data-min="${i}">${label}</button>`
   ).join('');
   pawRow.querySelectorAll('.cr-paw-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       communityMinPaws = parseInt(btn.dataset.min, 10);
       pawRow.querySelectorAll('.cr-paw-btn').forEach(b => b.classList.toggle('selected', b === btn));
+      updateCRFilterCount();
       applyRouteFilters(allRoutes);
     });
   });
 
+  updateCRFilterCount();
   applyRouteFilters(allRoutes);
 }
 
