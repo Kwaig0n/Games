@@ -2609,13 +2609,18 @@ function applyRouteFilters(allRoutes) {
     return;
   }
 
-  container.innerHTML = routes.map(r => {
+  // Sort by like count descending so most-liked rise to the top
+  routes = [...routes].sort((a, b) => (b._likes || 0) - (a._likes || 0));
+
+  const TOP = 5;
+  const makeCard = r => {
     const date = new Date(r.createdAt).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
     const avg = avgPaws(r);
     const count = (r.ratings || []).length;
     const pawStr = count > 0 ? `${'🐾'.repeat(Math.round(avg))} ${avg.toFixed(1)}` : '';
     const tagStr = (r.tags || []).slice(0, 2).map(t => escHtml(t)).join(' · ');
-    const meta = [pawStr, tagStr].filter(Boolean).join('  ·  ');
+    const likesStr = (r._likes || 0) > 0 ? `👍 ${r._likes}` : '';
+    const meta = [likesStr, pawStr, tagStr].filter(Boolean).join('  ·  ');
     return `<div class="cr-route-row" data-route-id="${escHtml(String(r.id))}">
       <div class="cr-route-icon">🗺️</div>
       <div class="cr-route-info">
@@ -2624,7 +2629,18 @@ function applyRouteFilters(allRoutes) {
       </div>
       <div class="cr-route-right">${r.distance.toFixed(1)} km<br>${date}</div>
     </div>`;
-  }).join('');
+  };
+
+  const topCards = routes.slice(0, TOP).map(makeCard).join('');
+  const moreCards = routes.slice(TOP).map(makeCard).join('');
+  const moreBtn = routes.length > TOP
+    ? `<button class="nearby-show-more" id="cr-show-more-btn" onclick="expandCommunityRoutes(this)">More routes (${routes.length - TOP}) ▾</button>`
+    : '';
+
+  container.innerHTML =
+    topCards +
+    (moreCards ? `<div id="cr-more-routes" style="display:none;">${moreCards}</div>` : '') +
+    moreBtn;
 
   container.querySelectorAll('.cr-route-row').forEach(card => {
     card.addEventListener('click', () => {
@@ -2634,6 +2650,12 @@ function applyRouteFilters(allRoutes) {
       if (route) viewRoute(route.id);
     });
   });
+}
+
+function expandCommunityRoutes(btn) {
+  const more = document.getElementById('cr-more-routes');
+  if (more) more.style.display = '';
+  btn.remove();
 }
 
 // ── Near Me ───────────────────────────────────────────────────────────────────
@@ -2901,6 +2923,7 @@ function loadCommunityCache() {
 
 function normalizeRemoteRoute(r) {
   const ratings = (r.route_ratings || []).map(rr => ({ stars: rr.stars, date: rr.created_at }));
+  const likes = (r.route_reactions || []).filter(rx => rx.reaction === 'like').length;
   return {
     id: r.id,            // UUID string
     name: r.name,
@@ -2910,6 +2933,7 @@ function normalizeRemoteRoute(r) {
     tags: r.tags || [],
     notes: r.notes || '',
     ratings,
+    _likes: likes,
     _source: 'remote',
     _lat: r.lat,
     _lng: r.lng
@@ -2963,11 +2987,11 @@ async function fetchCommunityRoutes(lat, lng) {
   const lngD = COMMUNITY_RADIUS_DEG / Math.cos(lat * Math.PI / 180);
   const { data, error } = await sb
     .from('routes')
-    .select('*, route_ratings(stars, created_at)')
+    .select('*, route_ratings(stars, created_at), route_reactions(reaction)')
     .gte('lat', lat - latD).lte('lat', lat + latD)
     .gte('lng', lng - lngD).lte('lng', lng + lngD)
     .order('created_at', { ascending: false })
-    .limit(30);
+    .limit(100);
   if (error || !data) {
     console.warn('Supabase fetch failed:', error?.message);
     return mergeWithLocalRoutes(loadCommunityCache());
