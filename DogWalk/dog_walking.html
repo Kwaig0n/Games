@@ -1030,6 +1030,69 @@
     }
     .nearby-show-more:active { background: var(--bg); }
 
+    /* ── Dog walking animation ── */
+    #walk-anim-container {
+      display: none;
+      position: relative;
+      height: 72px;
+      overflow: hidden;
+      margin: 2px 0 6px;
+    }
+    .walk-anim-ground {
+      position: absolute;
+      bottom: 5px;
+      left: 0; right: 0;
+      height: 2px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--border) 0, var(--border) 8px,
+        transparent 8px, transparent 18px
+      );
+      opacity: 0.5;
+    }
+    #walk-anim-wrapper {
+      position: absolute;
+      bottom: 5px;
+      animation: dogWalkAcross 5s linear infinite;
+    }
+    #walk-anim-wrapper svg {
+      display: block;
+      animation: dogBodyBob 0.44s ease-in-out infinite;
+    }
+    .dog-tail {
+      transform-box: fill-box;
+      transform-origin: right bottom;
+      animation: dogTailWag 0.38s ease-in-out infinite;
+    }
+    .dog-leg {
+      transform-box: fill-box;
+      transform-origin: top center;
+    }
+    .dog-fl-a { animation: dogLegA 0.44s ease-in-out infinite; }
+    .dog-fl-b { animation: dogLegB 0.44s ease-in-out infinite; }
+    .dog-bl-a { animation: dogLegB 0.44s ease-in-out infinite; }
+    .dog-bl-b { animation: dogLegA 0.44s ease-in-out infinite; }
+    @keyframes dogWalkAcross {
+      from { transform: translateX(-120px); }
+      to   { transform: translateX(calc(100vw + 20px)); }
+    }
+    @keyframes dogBodyBob {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-3px); }
+    }
+    @keyframes dogLegA {
+      0%, 100% { transform: rotate(-24deg); }
+      50%       { transform: rotate(24deg); }
+    }
+    @keyframes dogLegB {
+      0%, 100% { transform: rotate(24deg); }
+      50%       { transform: rotate(-24deg); }
+    }
+    @keyframes dogTailWag {
+      0%, 100% { transform: rotate(-12deg); }
+      50%       { transform: rotate(28deg); }
+    }
+
     .community-empty {
       font-size: 0.82rem;
       color: var(--muted);
@@ -1232,6 +1295,40 @@
   </div>
 
   <div id="heat-warning" class="heat-warn"></div>
+
+  <!-- Dog walking animation (shown while walk is active) -->
+  <div id="walk-anim-container">
+    <div class="walk-anim-ground"></div>
+    <div id="walk-anim-wrapper">
+      <svg viewBox="0 0 112 68" width="90" height="56">
+        <!-- Tail (drawn first so it sits behind body) -->
+        <path class="dog-tail" d="M20 37 Q7 22 13 9" stroke="#a06040" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <!-- Back legs (behind body) -->
+        <g class="dog-leg dog-bl-a"><rect x="27" y="49" width="7" height="19" rx="3.5" fill="#8b5235"/></g>
+        <g class="dog-leg dog-bl-b"><rect x="38" y="49" width="7" height="19" rx="3.5" fill="#a06040"/></g>
+        <!-- Body -->
+        <ellipse cx="48" cy="41" rx="29" ry="15" fill="#c8825a"/>
+        <!-- Neck -->
+        <ellipse cx="72" cy="33" rx="9" ry="13" fill="#c8825a"/>
+        <!-- Front legs (in front of body) -->
+        <g class="dog-leg dog-fl-a"><rect x="60" y="49" width="7" height="19" rx="3.5" fill="#8b5235"/></g>
+        <g class="dog-leg dog-fl-b"><rect x="71" y="49" width="7" height="19" rx="3.5" fill="#a06040"/></g>
+        <!-- Head -->
+        <circle cx="78" cy="23" r="16" fill="#c8825a"/>
+        <!-- Ear (floppy) -->
+        <ellipse cx="87" cy="11" rx="8" ry="11" fill="#a06040" transform="rotate(22 87 11)"/>
+        <!-- Snout -->
+        <ellipse cx="91" cy="27" rx="10" ry="7" fill="#e8b080"/>
+        <!-- Nose -->
+        <ellipse cx="99" cy="24" rx="4" ry="3" fill="#222"/>
+        <!-- Eye -->
+        <circle cx="82" cy="18" r="3.5" fill="#222"/>
+        <circle cx="83" cy="17" r="1.2" fill="white"/>
+        <!-- Mouth -->
+        <path d="M91 31 Q95 35 99 31" stroke="#8b5235" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
 
   <div id="welcome-banner" style="text-align:center;padding:10px 4px 4px;font-size:0.88rem;color:var(--muted);font-weight:500;">🐾 Just add your pup and start walking!</div>
   <br>
@@ -1639,6 +1736,7 @@ async function startWalk() {
   accuracyRejectWindow = [];
   walkPhotos = [];
   document.getElementById('walk-photo-bar').style.display = '';
+  document.getElementById('walk-anim-container').style.display = '';
   document.getElementById('btn-walk-photo').textContent = '📷 Add Photo';
   const liveStrip = document.getElementById('walk-live-strip');
   if (liveStrip) { liveStrip.innerHTML = ''; liveStrip.style.display = 'none'; }
@@ -1680,6 +1778,7 @@ function stopWalk() {
   document.getElementById('walk-status').className = 'status-badge idle';
   document.getElementById('gps-quality').style.display = 'none';
   document.getElementById('walk-photo-bar').style.display = 'none';
+  document.getElementById('walk-anim-container').style.display = 'none';
   document.querySelector('.nearby-section').style.display = '';
   document.getElementById('dog-selector-row').style.display = '';
 
