@@ -1400,10 +1400,6 @@
         <div style="font-size:0.72rem;color:var(--muted);">duration</div>
       </div>
     </div>
-    <div style="text-align:center;margin-bottom:18px;">
-      <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:8px;">Rate this walk</div>
-      <div class="paw-rating-row" id="walk-rating-paw-row" style="justify-content:center;font-size:2rem;gap:8px;"></div>
-    </div>
     <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:10px;">
       <button id="pws-save-route-btn" class="btn btn-start" style="width:100%;padding:13px;font-size:0.95rem;margin-bottom:8px;" onclick="postWalkSaveRoute()"></button>
       <p id="pws-save-route-hint" style="font-size:0.72rem;color:var(--muted);text-align:center;margin:0 0 12px;"></p>
@@ -1767,24 +1763,6 @@ function openWalkRatingModal(walk) {
     if (walk.duration < MIN_ROUTE_DURATION) reasons.push('5 min minimum');
     if (walk.distance < MIN_ROUTE_DISTANCE) reasons.push('300 m minimum');
     hint.textContent = `Requires ${reasons.join(' & ')} to save as a route`;
-  }
-
-  const pawRow = document.getElementById('walk-rating-paw-row');
-  if (eligible) {
-    buildPawRow('walk-rating-paw-row', 0, n => {
-      const walks = loadWalks();
-      const idx = walks.findIndex(w => w.id === ratingWalkId);
-      if (idx !== -1) { walks[idx].rating = n; saveWalks(walks); }
-      showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
-      const updated = loadWalks().find(w => w.id === ratingWalkId);
-      if (updated) openWalkRatingModal(updated);
-    });
-    pawRow.style.opacity = '1';
-    pawRow.style.pointerEvents = '';
-  } else {
-    pawRow.innerHTML = [1,2,3,4,5].map(() => `<span class="paw-star">🐾</span>`).join('');
-    pawRow.style.opacity = '0.25';
-    pawRow.style.pointerEvents = 'none';
   }
 
   document.getElementById('walk-rating-modal').classList.add('open');
