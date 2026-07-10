@@ -1454,7 +1454,7 @@
       <input id="route-photo-input" type="file" accept="image/*" style="display:none" onchange="handleRoutePhotoUpload(event)" />
     </div>
     <div id="mini-map-modal"></div>
-    <button class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;font-size:0.9rem;" onclick="openShareFromView()">↗ Share this Route</button>
+    <button id="share-from-view-btn" class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;font-size:0.9rem;" onclick="openShareFromView()">↗ Share this Route</button>
     <button class="btn-close-modal" onclick="closeView()">Close</button>
   </div>
 </div>
@@ -2151,6 +2151,12 @@ function viewRoute(id) {
   const sbId = route._sbId || (route._source === 'remote' ? String(route.id) : null);
   loadRoutePhotos(sbId);
   loadRouteReactions(sbId);
+
+  const shareBtn = document.getElementById('share-from-view-btn');
+  const alreadyShared = !!(route._sbId || route._source === 'remote');
+  shareBtn.textContent = alreadyShared ? '✓ Shared to Community' : '↗ Share this Route';
+  shareBtn.disabled = alreadyShared;
+  shareBtn.style.opacity = alreadyShared ? '0.5' : '1';
 
   document.getElementById('view-modal').classList.add('open');
   openMiniMap(route.coords, '#4a90d9');
@@ -2911,6 +2917,10 @@ function normalizeRemoteRoute(r) {
 }
 
 async function uploadRouteToDB(route) {
+  if (route._sbId || route._source === 'remote') {
+    showToast('Already shared to community!');
+    return;
+  }
   if (!sb) {
     showToast('Could not connect to server — try refreshing the page.');
     return;
