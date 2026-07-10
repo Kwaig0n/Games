@@ -1376,11 +1376,31 @@
 
 <!-- ══════════════ POST-WALK RATING MODAL ══════════════ -->
 <div class="modal-overlay" id="walk-rating-modal">
-  <div class="modal" style="text-align:center;">
-    <h3 style="margin-bottom:6px;">How was the walk? 🐾</h3>
-    <p id="walk-rating-summary" style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;"></p>
-    <div class="paw-rating-row" id="walk-rating-paw-row" style="justify-content:center;margin-bottom:20px;font-size:2rem;gap:8px;"></div>
-    <button class="btn-close-modal" onclick="skipWalkRating()">Skip</button>
+  <div class="modal" style="max-width:340px;">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:2.2rem;margin-bottom:4px;">🎉</div>
+      <h3 style="margin-bottom:2px;">Walk Complete!</h3>
+      <p id="walk-rating-dog" style="font-size:0.85rem;color:var(--muted);margin:0;"></p>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:18px;">
+      <div style="flex:1;background:var(--bg);border-radius:12px;padding:12px;text-align:center;">
+        <div id="pws-distance" style="font-size:1.4rem;font-weight:700;color:var(--primary);"></div>
+        <div style="font-size:0.72rem;color:var(--muted);">km</div>
+      </div>
+      <div style="flex:1;background:var(--bg);border-radius:12px;padding:12px;text-align:center;">
+        <div id="pws-duration" style="font-size:1.4rem;font-weight:700;color:var(--primary);"></div>
+        <div style="font-size:0.72rem;color:var(--muted);">duration</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:8px;">Rate this walk</div>
+      <div class="paw-rating-row" id="walk-rating-paw-row" style="justify-content:center;font-size:2rem;gap:8px;"></div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:10px;">
+      <button id="pws-save-route-btn" class="btn btn-start" style="width:100%;padding:13px;font-size:0.95rem;margin-bottom:8px;" onclick="postWalkSaveRoute()"></button>
+      <p id="pws-save-route-hint" style="font-size:0.72rem;color:var(--muted);text-align:center;margin:0 0 12px;"></p>
+      <button class="btn" style="width:100%;padding:11px;background:var(--bg);color:var(--text);" onclick="skipWalkRating()">Done</button>
+    </div>
   </div>
 </div>
 
@@ -1690,22 +1710,57 @@ function stopWalk() {
 
 let ratingWalkId = null;
 
+const MIN_ROUTE_DURATION = 5 * 60;  // 5 minutes in seconds
+const MIN_ROUTE_DISTANCE = 0.3;     // km
+
 function openWalkRatingModal(walk) {
   ratingWalkId = walk.id;
-  document.getElementById('walk-rating-summary').textContent =
-    `${walk.dog} · ${walk.distance.toFixed(2)} km · ${formatDuration(walk.duration)}`;
+
+  document.getElementById('walk-rating-dog').textContent = `${walk.dog}'s walk`;
+  document.getElementById('pws-distance').textContent = walk.distance.toFixed(2);
+  document.getElementById('pws-duration').textContent = formatDuration(walk.duration);
+
+  const eligible = walk.duration >= MIN_ROUTE_DURATION && walk.distance >= MIN_ROUTE_DISTANCE;
+  const alreadySaved = !!walk.routeId;
+  const btn = document.getElementById('pws-save-route-btn');
+  const hint = document.getElementById('pws-save-route-hint');
+
+  if (alreadySaved) {
+    btn.textContent = '✓ Route already saved';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    hint.textContent = '';
+  } else if (eligible) {
+    btn.textContent = '📍 Save as Route';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    hint.textContent = '';
+  } else {
+    btn.textContent = '📍 Save as Route';
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    const reasons = [];
+    if (walk.duration < MIN_ROUTE_DURATION) reasons.push('5 min minimum');
+    if (walk.distance < MIN_ROUTE_DISTANCE) reasons.push('300 m minimum');
+    hint.textContent = `Requires ${reasons.join(' & ')} to save as a route`;
+  }
+
   buildPawRow('walk-rating-paw-row', 0, n => {
     const walks = loadWalks();
     const idx = walks.findIndex(w => w.id === ratingWalkId);
-    if (idx !== -1) {
-      walks[idx].rating = n;
-      saveWalks(walks);
-    }
-    document.getElementById('walk-rating-modal').classList.remove('open');
-    showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}! Walk saved.`);
-    ratingWalkId = null;
+    if (idx !== -1) { walks[idx].rating = n; saveWalks(walks); }
+    showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
+    // Re-render button in case routeId changed
+    const updated = loadWalks().find(w => w.id === ratingWalkId);
+    if (updated) openWalkRatingModal(updated);
   });
+
   document.getElementById('walk-rating-modal').classList.add('open');
+}
+
+function postWalkSaveRoute() {
+  document.getElementById('walk-rating-modal').classList.remove('open');
+  if (ratingWalkId) openCreateRouteModal(ratingWalkId);
 }
 
 function skipWalkRating() {
