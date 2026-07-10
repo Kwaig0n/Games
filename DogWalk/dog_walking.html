@@ -1256,8 +1256,8 @@
     <button id="btn-start" class="btn btn-start" onclick="openChecklist()">Start Walk</button>
     <button id="btn-stop" class="btn btn-stop" onclick="stopWalk()" disabled>Stop & Save</button>
   </div>
-  <div id="walk-photo-bar" style="display:none;margin-bottom:16px;background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--shadow);">
-    <button class="btn" id="btn-walk-photo" style="width:100%;background:var(--bg);color:var(--text);border:2px dashed var(--border);padding:11px;font-size:0.95rem;border-radius:10px;margin-bottom:0;" onclick="document.getElementById('walk-photo-input').click()">📷 Add Photo</button>
+  <div id="walk-photo-bar" style="display:none;margin-top:4px;margin-bottom:16px;background:var(--card);border-radius:14px;padding:14px;box-shadow:var(--shadow);">
+    <button class="btn" id="btn-walk-photo" style="width:100%;background:var(--bg);color:var(--text);border:2px dashed var(--border);padding:13px;font-size:0.95rem;border-radius:10px;margin-bottom:0;" onclick="document.getElementById('walk-photo-input').click()">📷 Add Photo</button>
     <input id="walk-photo-input" type="file" accept="image/*" capture="environment" style="display:none" onchange="captureWalkPhoto(event)" />
     <div id="walk-live-strip" class="route-photos-strip" style="margin-top:10px;display:none;"></div>
   </div>
@@ -1604,6 +1604,7 @@ async function startWalk() {
   document.getElementById('btn-walk-photo').textContent = '📷 Add Photo';
   const liveStrip = document.getElementById('walk-live-strip');
   if (liveStrip) { liveStrip.innerHTML = ''; liveStrip.style.display = 'none'; }
+  document.querySelector('.nearby-section').style.display = 'none';
   walkPolyline.setLatLngs([]);
 
   document.getElementById('btn-start').disabled = true;
@@ -1640,6 +1641,7 @@ function stopWalk() {
   document.getElementById('walk-status').className = 'status-badge idle';
   document.getElementById('gps-quality').style.display = 'none';
   document.getElementById('walk-photo-bar').style.display = 'none';
+  document.querySelector('.nearby-section').style.display = '';
 
   if (walkCoords.length >= 2) {
     walkMap.fitBounds(walkPolyline.getBounds(), { padding: [30, 30] });
@@ -2541,12 +2543,12 @@ function applyRouteFilters(allRoutes) {
 // ── Near Me ───────────────────────────────────────────────────────────────────
 function findNearbyRoutes() {
   if (!navigator.geolocation) { showToast('Geolocation not supported.'); return; }
-  const btn = document.querySelector('.near-me-btn');
+  const btn = document.querySelector('.btn-nearby');
   btn.textContent = '⏳ Locating…';
   btn.disabled = true;
 
   navigator.geolocation.getCurrentPosition(pos => {
-    btn.innerHTML = '<span>📍</span> Find Routes Near Me';
+    btn.textContent = 'Search';
     btn.disabled = false;
     const { latitude: lat, longitude: lng } = pos.coords;
     const RADIUS_KM = parseFloat(document.getElementById('nearby-radius').value) || 3;
@@ -2595,7 +2597,7 @@ function findNearbyRoutes() {
       showMoreBtn;
 
   }, err => {
-    btn.innerHTML = '<span>📍</span> Find Routes Near Me';
+    btn.textContent = 'Search';
     btn.disabled = false;
     showToast('Could not get location: ' + err.message);
   }, { enableHighAccuracy: true, timeout: 12000 });
