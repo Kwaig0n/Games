@@ -1745,15 +1745,23 @@ function openWalkRatingModal(walk) {
     hint.textContent = `Requires ${reasons.join(' & ')} to save as a route`;
   }
 
-  buildPawRow('walk-rating-paw-row', 0, n => {
-    const walks = loadWalks();
-    const idx = walks.findIndex(w => w.id === ratingWalkId);
-    if (idx !== -1) { walks[idx].rating = n; saveWalks(walks); }
-    showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
-    // Re-render button in case routeId changed
-    const updated = loadWalks().find(w => w.id === ratingWalkId);
-    if (updated) openWalkRatingModal(updated);
-  });
+  const pawRow = document.getElementById('walk-rating-paw-row');
+  if (eligible) {
+    buildPawRow('walk-rating-paw-row', 0, n => {
+      const walks = loadWalks();
+      const idx = walks.findIndex(w => w.id === ratingWalkId);
+      if (idx !== -1) { walks[idx].rating = n; saveWalks(walks); }
+      showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
+      const updated = loadWalks().find(w => w.id === ratingWalkId);
+      if (updated) openWalkRatingModal(updated);
+    });
+    pawRow.style.opacity = '1';
+    pawRow.style.pointerEvents = '';
+  } else {
+    pawRow.innerHTML = [1,2,3,4,5].map(() => `<span class="paw-star">🐾</span>`).join('');
+    pawRow.style.opacity = '0.25';
+    pawRow.style.pointerEvents = 'none';
+  }
 
   document.getElementById('walk-rating-modal').classList.add('open');
 }
