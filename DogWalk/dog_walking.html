@@ -2619,7 +2619,7 @@ function applyRouteFilters(allRoutes) {
     const count = (r.ratings || []).length;
     const pawStr = count > 0 ? `${'🐾'.repeat(Math.round(avg))} ${avg.toFixed(1)}` : '';
     const tagStr = (r.tags || []).slice(0, 2).map(t => escHtml(t)).join(' · ');
-    const likesStr = (r._likes || 0) > 0 ? `👍 ${r._likes}` : '';
+    const likesStr = (r._likes || 0) > 0 ? `${r._likes} vote${r._likes === 1 ? '' : 's'}` : '';
     const meta = [likesStr, pawStr, tagStr].filter(Boolean).join('  ·  ');
     return `<div class="cr-route-row" data-route-id="${escHtml(String(r.id))}">
       <div class="cr-route-icon">🗺️</div>
