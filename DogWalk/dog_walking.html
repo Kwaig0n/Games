@@ -1256,9 +1256,10 @@
     <button id="btn-start" class="btn btn-start" onclick="openChecklist()">Start Walk</button>
     <button id="btn-stop" class="btn btn-stop" onclick="stopWalk()" disabled>Stop & Save</button>
   </div>
-  <div id="walk-photo-bar" style="display:none;margin-bottom:12px;">
-    <button class="btn" id="btn-walk-photo" style="width:100%;background:var(--card);color:var(--text);border:2px dashed var(--border);padding:12px;font-size:0.95rem;" onclick="document.getElementById('walk-photo-input').click()">📷 Add Photo</button>
+  <div id="walk-photo-bar" style="display:none;margin-bottom:16px;background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--shadow);">
+    <button class="btn" id="btn-walk-photo" style="width:100%;background:var(--bg);color:var(--text);border:2px dashed var(--border);padding:11px;font-size:0.95rem;border-radius:10px;margin-bottom:0;" onclick="document.getElementById('walk-photo-input').click()">📷 Add Photo</button>
     <input id="walk-photo-input" type="file" accept="image/*" capture="environment" style="display:none" onchange="captureWalkPhoto(event)" />
+    <div id="walk-live-strip" class="route-photos-strip" style="margin-top:10px;display:none;"></div>
   </div>
 
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
@@ -1601,6 +1602,8 @@ async function startWalk() {
   walkPhotos = [];
   document.getElementById('walk-photo-bar').style.display = '';
   document.getElementById('btn-walk-photo').textContent = '📷 Add Photo';
+  const liveStrip = document.getElementById('walk-live-strip');
+  if (liveStrip) { liveStrip.innerHTML = ''; liveStrip.style.display = 'none'; }
   walkPolyline.setLatLngs([]);
 
   document.getElementById('btn-start').disabled = true;
@@ -3537,6 +3540,17 @@ async function captureWalkPhoto(event) {
 
   walkPhotos.push(dataUrl);
   if (btn) { btn.textContent = `📷 Add Photo (${walkPhotos.length})`; btn.disabled = false; }
+
+  const strip = document.getElementById('walk-live-strip');
+  if (strip) {
+    strip.style.display = 'flex';
+    const thumb = document.createElement('img');
+    thumb.className = 'route-photo-thumb';
+    thumb.src = dataUrl;
+    thumb.onclick = () => openPhotoFullscreen(dataUrl);
+    strip.appendChild(thumb);
+  }
+
   showToast(`Photo ${walkPhotos.length} captured! 📸`);
 }
 
