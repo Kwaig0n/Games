@@ -33,3 +33,21 @@ create policy "public read"   on routes        for select using (true);
 create policy "public insert" on routes        for insert with check (true);
 create policy "public read"   on route_ratings for select using (true);
 create policy "public insert" on route_ratings for insert with check (true);
+
+-- Photos attached to routes
+create table if not exists route_photos (
+  id            uuid primary key default gen_random_uuid(),
+  route_id      uuid references routes(id) on delete cascade,
+  storage_path  text not null,
+  device_id     text,
+  created_at    timestamptz default now()
+);
+
+alter table route_photos enable row level security;
+
+create policy "public read"   on route_photos for select using (true);
+create policy "public insert" on route_photos for insert with check (true);
+
+-- Storage bucket (run once in Supabase dashboard → Storage)
+-- insert into storage.buckets (id, name, public) values ('route-photos', 'route-photos', true)
+--   on conflict (id) do nothing;
