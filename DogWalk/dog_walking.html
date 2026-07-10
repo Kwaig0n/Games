@@ -1243,7 +1243,7 @@
 
   <div class="dog-row" style="flex-direction:column;align-items:stretch;gap:10px;">
     <div style="font-size:0.85rem;color:var(--muted);font-weight:500;">Walking with</div>
-    <div class="dog-selector-row">
+    <div id="dog-selector-row" class="dog-selector-row">
       <select id="group-select" onchange="onGroupSelectChange(this)">
         <option value="">Select dogs...</option>
       </select>
@@ -1625,6 +1625,7 @@ async function startWalk() {
   const liveStrip = document.getElementById('walk-live-strip');
   if (liveStrip) { liveStrip.innerHTML = ''; liveStrip.style.display = 'none'; }
   document.querySelector('.nearby-section').style.display = 'none';
+  document.getElementById('dog-selector-row').style.display = 'none';
   walkPolyline.setLatLngs([]);
 
   document.getElementById('btn-start').disabled = true;
@@ -1662,6 +1663,7 @@ function stopWalk() {
   document.getElementById('gps-quality').style.display = 'none';
   document.getElementById('walk-photo-bar').style.display = 'none';
   document.querySelector('.nearby-section').style.display = '';
+  document.getElementById('dog-selector-row').style.display = '';
 
   if (walkCoords.length >= 2) {
     walkMap.fitBounds(walkPolyline.getBounds(), { padding: [30, 30] });
