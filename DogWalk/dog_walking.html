@@ -941,10 +941,54 @@
       color: var(--muted);
       transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
-    .cr-paw-btn.selected {
+    .cr-paw-btn.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .cr-route-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 14px; background: var(--card);
+      border-radius: 12px; margin-bottom: 8px;
+      box-shadow: var(--shadow); cursor: pointer;
+      transition: transform 0.12s;
+    }
+    .cr-route-row:active { transform: scale(0.98); }
+    .cr-route-icon {
+      font-size: 1.3rem; flex-shrink: 0;
+      width: 36px; height: 36px; border-radius: 10px;
+      background: #e8f0fe; display: flex; align-items: center; justify-content: center;
+    }
+    .cr-route-info { flex: 1; min-width: 0; }
+    .cr-route-name { font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cr-route-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .cr-route-right { text-align: right; flex-shrink: 0; font-size: 0.72rem; color: var(--muted); }
+
+    .route-photos-strip {
+      display: flex; gap: 8px;
+      overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+    }
+    .route-photos-strip::-webkit-scrollbar { display: none; }
+    .route-photo-thumb {
+      flex-shrink: 0; width: 80px; height: 80px;
+      border-radius: 10px; object-fit: cover;
+      background: var(--bg); cursor: pointer;
+    }
+    .route-photo-empty {
+      font-size: 0.78rem; color: var(--muted); padding: 4px 0;
+    }
+    #splash {
+      position: fixed; inset: 0; z-index: 9999;
       background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 14px;
+      transition: opacity 0.4s ease;
+    }
+    #splash.hide { opacity: 0; pointer-events: none; }
+    #splash-icon { font-size: 4rem; animation: splash-bounce 0.6s ease; }
+    #splash-name { font-size: 1.6rem; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+    #splash-sub  { font-size: 0.85rem; color: rgba(255,255,255,0.75); }
+    @keyframes splash-bounce {
+      0%   { transform: scale(0.6); opacity: 0; }
+      70%  { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
     }
   </style>
 </head>
@@ -1134,6 +1178,15 @@
       <div id="view-route-tag-chips" class="tag-chips-row" style="margin-bottom:10px;"></div>
       <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:5px;">Rate this route</div>
       <div class="paw-rating-row" id="view-route-paw-row"></div>
+    </div>
+    <!-- Photo strip -->
+    <div id="route-photos-section" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:0.78rem;font-weight:600;color:var(--muted);">Photos</span>
+        <button class="btn-sm btn-view" id="route-add-photo-btn" style="padding:4px 12px;font-size:0.78rem;" onclick="document.getElementById('route-photo-input').click()">+ Add Photo</button>
+      </div>
+      <div id="route-photos-strip" class="route-photos-strip"></div>
+      <input id="route-photo-input" type="file" accept="image/*" style="display:none" onchange="handleRoutePhotoUpload(event)" />
     </div>
     <div id="mini-map-modal"></div>
     <button class="btn btn-start" style="width:100%;margin-bottom:10px;padding:12px;font-size:0.9rem;" onclick="openShareFromView()">↗ Share this Route</button>
@@ -1731,6 +1784,9 @@ function viewRoute(id) {
       }
     }
   });
+
+  const sbId = route._sbId || (route._source === 'remote' ? String(route.id) : null);
+  loadRoutePhotos(sbId);
 
   document.getElementById('view-modal').classList.add('open');
   openMiniMap(route.coords, '#4a90d9');
@@ -3092,13 +3148,141 @@ function migrateSubmittedWalks() {
   if (walksChanged) saveWalks(walks);
 }
 
+function renderLastWalkTeaser() {
+  const el = document.getElementById('last-walk-teaser');
+  if (!el) return;
+  const walks = loadWalks();
+  if (walks.length === 0) { el.innerHTML = ''; return; }
+  const w = walks[0];
+  const date = new Date(w.date);
+  const dateStr = date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  const avatarSrc = getAvatarForGroupName(w.dog);
+  const avatarHtml = avatarSrc
+    ? `<img src="${avatarSrc}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;" />`
+    : `<div style="width:40px;height:40px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">🐶</div>`;
+  const rating = w.rating ? ' · ' + '🐾'.repeat(w.rating) : '';
+  el.innerHTML = `
+    <div class="last-walk-teaser" onclick="viewWalk(${w.id})" style="cursor:pointer;">
+      ${avatarHtml}
+      <div class="last-walk-teaser-info">
+        <div class="last-walk-teaser-label">Last walk</div>
+        <div class="last-walk-teaser-title">${escHtml(w.dog)}${rating}</div>
+        <div class="last-walk-teaser-meta">${dateStr} · ${w.distance.toFixed(2)} km · ${formatDuration(w.duration)}</div>
+      </div>
+      <div style="font-size:1.2rem;color:var(--muted);">›</div>
+    </div>`;
+}
+
+// ── Route photos ─────────────────────────────────────────────────────────────
+let currentPhotoRouteId = null; // the UUID (_sbId) of the route being viewed
+
+async function loadRoutePhotos(sbId) {
+  const strip = document.getElementById('route-photos-strip');
+  const addBtn = document.getElementById('route-add-photo-btn');
+  if (!sbId || !sb) {
+    strip.innerHTML = `<span class="route-photo-empty">Share this route to community to add photos.</span>`;
+    if (addBtn) addBtn.style.display = 'none';
+    return;
+  }
+  currentPhotoRouteId = sbId;
+  if (addBtn) addBtn.style.display = '';
+  strip.innerHTML = `<span class="route-photo-empty">Loading…</span>`;
+  const { data, error } = await sb.from('route_photos')
+    .select('storage_path')
+    .eq('route_id', sbId)
+    .order('created_at', { ascending: true });
+  if (error || !data || data.length === 0) {
+    strip.innerHTML = `<span class="route-photo-empty">No photos yet — be the first to add one!</span>`;
+    return;
+  }
+  strip.innerHTML = data.map(p => {
+    const url = `${SUPABASE_URL}/storage/v1/object/public/route-photos/${p.storage_path}`;
+    return `<img class="route-photo-thumb" src="${url}" onclick="openPhotoFullscreen('${url}')" />`;
+  }).join('');
+}
+
+function openPhotoFullscreen(url) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9000;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<img src="${url}" style="max-width:95vw;max-height:90vh;border-radius:10px;object-fit:contain;" /><button style="position:absolute;top:20px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;" onclick="this.parentElement.remove()">✕</button>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+async function handleRoutePhotoUpload(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file || !currentPhotoRouteId || !sb) return;
+  const addBtn = document.getElementById('route-add-photo-btn');
+  if (addBtn) { addBtn.textContent = '⏳ Uploading…'; addBtn.disabled = true; }
+
+  // Compress to max 900px
+  const dataUrl = await new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 900;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale; canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = URL.createObjectURL(file);
+  });
+
+  // dataURL → Blob
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const path = `${currentPhotoRouteId}/${Date.now()}-${getDeviceId().slice(0,8)}.jpg`;
+
+  const { error: upErr } = await sb.storage.from('route-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+  if (upErr) {
+    showToast('Photo upload failed — ' + upErr.message);
+    if (addBtn) { addBtn.textContent = '+ Add Photo'; addBtn.disabled = false; }
+    return;
+  }
+
+  await sb.from('route_photos').insert({ route_id: currentPhotoRouteId, storage_path: path, device_id: getDeviceId() });
+  if (addBtn) { addBtn.textContent = '+ Add Photo'; addBtn.disabled = false; }
+  showToast('Photo added! 📸');
+  loadRoutePhotos(currentPhotoRouteId);
+}
+
+// ── Pre-walk checklist ────────────────────────────────────────────────────────
+const CHECKLIST_ITEMS = [
+  { emoji: '💧', label: 'Water bottle' },
+  { emoji: '💩', label: 'Poop bags' },
+  { emoji: '🦮', label: 'Leash' },
+  { emoji: '🎾', label: 'Treats / toys' },
+  { emoji: '📱', label: 'Phone charged' },
+];
+
+function openChecklist() {
+  const container = document.getElementById('checklist-items');
+  container.innerHTML = CHECKLIST_ITEMS.map(item => `
+    <div class="checklist-item">
+      <span class="checklist-emoji">${item.emoji}</span>
+      <span class="checklist-label">${item.label}</span>
+    </div>
+  `).join('');
+  document.getElementById('checklist-modal').classList.add('open');
+}
+
+function closeChecklist() {
+  document.getElementById('checklist-modal').classList.remove('open');
+}
+
+async function confirmChecklist() {
+  closeChecklist();
+  await startWalk();
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 migrateSubmittedWalks();
 checkSharedRoute();
 renderGroupDropdown();
 fetchWeather();
 
-document.getElementById('dog-profile-avatar-input').addEventListener('change', handleDogAvatarUpload);
 
 // Re-acquire wake lock when the tab becomes visible again (locks are auto-released on hide)
 document.addEventListener('visibilitychange', () => {
@@ -3121,7 +3305,7 @@ window.addEventListener('beforeunload', e => {
     <div class="dog-profile-title" id="dog-profile-modal-title">Add Dogs</div>
     <div id="modal-dogs-list"></div>
     <button class="add-dog-btn" onclick="addModalDog()">+ Add another dog</button>
-    <input id="dog-profile-avatar-input" type="file" accept="image/*" style="display:none" />
+    <input id="dog-profile-avatar-input" type="file" accept="image/*" style="display:none" onchange="handleDogAvatarUpload(event)" />
     <div id="group-name-row" style="display:none;">
       <label>Group name</label>
       <input id="group-name-input" type="text" placeholder="e.g. The Pack" />
