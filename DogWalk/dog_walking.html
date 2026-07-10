@@ -766,6 +766,30 @@
       to { transform: translateY(0); }
     }
 
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--bg);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .checklist-item.checked { background: #e6f9f0; }
+    .checklist-box {
+      width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; transition: all 0.15s;
+    }
+    .checklist-item.checked .checklist-box {
+      background: var(--success); border-color: var(--success); color: #fff;
+    }
+    .checklist-label { font-size: 0.95rem; font-weight: 500; }
+    .checklist-emoji { font-size: 1.3rem; }
+
     .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
     .modal p { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; }
 
@@ -1207,7 +1231,7 @@
   </div>
 
   <div class="btn-group">
-    <button id="btn-start" class="btn btn-start" onclick="startWalk()">Start Walk</button>
+    <button id="btn-start" class="btn btn-start" onclick="openChecklist()">Start Walk</button>
     <button id="btn-stop" class="btn btn-stop" onclick="stopWalk()" disabled>Stop & Save</button>
   </div>
 
@@ -1285,6 +1309,17 @@
   </div>
   <div id="places-map"></div>
   <div id="places-list"></div>
+</div>
+
+<!-- ══════════════ PRE-WALK CHECKLIST MODAL ══════════════ -->
+<div class="modal-overlay" id="checklist-modal">
+  <div class="modal" style="max-width:340px;">
+    <h3 style="margin-bottom:4px;">Ready to go? 🐾</h3>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">Make sure you've got everything</p>
+    <div id="checklist-items" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+    <button class="btn btn-start" style="width:100%;padding:13px;font-size:1rem;" onclick="confirmChecklist()">Let's Walk! 🐕</button>
+    <button class="btn" style="width:100%;padding:10px;margin-top:8px;background:var(--bg);color:var(--text);" onclick="closeChecklist()">Cancel</button>
+  </div>
 </div>
 
 <!-- ══════════════ SHARE MODAL ══════════════ -->
@@ -1865,7 +1900,7 @@ function startWalkFromRoute(routeId) {
   if (!route) return;
   pendingRouteId = routeId;
   showTab('walk', document.querySelector('nav button'));
-  showToast(`Route "${route.name}" selected — start your walk!`);
+  openChecklist();
 }
 
 function openShareRoute(routeId) {
@@ -3367,6 +3402,43 @@ function renderLastWalkTeaser() {
       </div>
       <div style="font-size:1.2rem;color:var(--muted);">›</div>
     </div>`;
+}
+
+// ── Pre-walk checklist ────────────────────────────────────────────────────────
+const CHECKLIST_ITEMS = [
+  { emoji: '💧', label: 'Water bottle' },
+  { emoji: '💩', label: 'Poop bags' },
+  { emoji: '🦮', label: 'Leash' },
+  { emoji: '🎾', label: 'Treats / toys' },
+  { emoji: '📱', label: 'Phone charged' },
+];
+
+function openChecklist() {
+  const container = document.getElementById('checklist-items');
+  container.innerHTML = CHECKLIST_ITEMS.map((item, i) => `
+    <div class="checklist-item" id="chk-${i}" onclick="toggleChecklistItem(${i})">
+      <span class="checklist-emoji">${item.emoji}</span>
+      <span class="checklist-label">${item.label}</span>
+      <div class="checklist-box" id="chk-box-${i}"></div>
+    </div>
+  `).join('');
+  document.getElementById('checklist-modal').classList.add('open');
+}
+
+function toggleChecklistItem(i) {
+  const row = document.getElementById(`chk-${i}`);
+  const box = document.getElementById(`chk-box-${i}`);
+  const checked = row.classList.toggle('checked');
+  box.textContent = checked ? '✓' : '';
+}
+
+function closeChecklist() {
+  document.getElementById('checklist-modal').classList.remove('open');
+}
+
+async function confirmChecklist() {
+  closeChecklist();
+  await startWalk();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
