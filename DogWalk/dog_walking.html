@@ -3567,6 +3567,10 @@ const CHECKLIST_ITEMS = [
 ];
 
 function openChecklist() {
+  if (!selectedGroup) {
+    showToast('Please add and select a dog first!');
+    return;
+  }
   const container = document.getElementById('checklist-items');
   container.innerHTML = CHECKLIST_ITEMS.map(item => `
     <div class="checklist-item">
