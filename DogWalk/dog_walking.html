@@ -2129,6 +2129,7 @@ function viewRoute(id) {
           saveCommunityCache(communityRoutesCache);
           currentViewItem.data = communityRoutesCache[ci];
           document.getElementById('view-route-paw-avg').innerHTML = renderPawAvg(communityRoutesCache[ci]);
+          showCommunityRoutes(mergeWithLocalRoutes(communityRoutesCache));
         }
         showToast(`Rated ${n} paw${n !== 1 ? 's' : ''}!`);
       }
