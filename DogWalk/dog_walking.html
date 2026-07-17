@@ -1589,7 +1589,7 @@ function showTab(name, btn) {
 }
 
 // ── Main walk map ────────────────────────────────────────────────────────────
-let walkMap, walkPolyline, walkMarker;
+let walkMap, walkPolyline, walkMarker, walkStartMarker;
 
 function initWalkMap() {
   walkMap = L.map('map').setView([0, 0], 2);
@@ -1655,6 +1655,8 @@ async function startWalk() {
   document.querySelector('.nearby-section').style.display = 'none';
   document.getElementById('dog-selector-row').style.display = 'none';
   walkPolyline.setLatLngs([]);
+  if (walkStartMarker) { walkMap.removeLayer(walkStartMarker); walkStartMarker = null; }
+  if (walkMarker)      { walkMap.removeLayer(walkMarker);      walkMarker = null; }
 
   document.getElementById('btn-start').disabled = true;
   document.getElementById('btn-stop').disabled = false;
@@ -1861,6 +1863,11 @@ function stopWalk() {
   document.getElementById('map').style.display = 'none';
   document.getElementById('walk-stats').style.display = 'none';
 
+  // Clean up map so the next walk starts fresh
+  if (walkStartMarker) { walkMap.removeLayer(walkStartMarker); walkStartMarker = null; }
+  if (walkMarker)      { walkMap.removeLayer(walkMarker);      walkMarker = null; }
+  walkPolyline.setLatLngs([]);
+
   renderLastWalkTeaser();
   openWalkRatingModal(walk);
 }
@@ -1942,6 +1949,16 @@ function onPosition(pos) {
 
   if (walkCoords.length === 1) {
     walkMap.setView([lat, lng], 16);
+    // Green teardrop start pin
+    walkStartMarker = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="width:22px;height:22px;background:#22c55e;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,0.35);"></div>`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 22]
+      }),
+      zIndexOffset: 1000
+    }).bindTooltip('Start', { permanent: false, direction: 'top', offset: [0, -24] }).addTo(walkMap);
   } else {
     walkMap.panTo([lat, lng]);
   }
