@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="China Travel" />
+  <meta name="theme-color" content="#de2910" />
+  <link rel="manifest" href="manifest.json" />
+  <title>China Travel Helper</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #de2910;
+      --primary-dark: #a81e0b;
+      --gold: #ffde00;
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --border: #e2e8f0;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --success: #4caf7d;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 24px;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(222,41,16,0.35);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    header .star { font-size: 1.5rem; color: var(--gold); }
+    header h1 { font-size: 1.25rem; font-weight: 700; }
+    header p { font-size: 0.72rem; opacity: 0.9; margin-top: 1px; }
+
+    nav {
+      display: flex;
+      overflow-x: auto;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 58px;
+      z-index: 999;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    nav::-webkit-scrollbar { display: none; }
+
+    nav button {
+      flex: 1 0 auto;
+      min-width: 76px;
+      padding: 10px 8px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 3px solid transparent;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+    nav button .ic { font-size: 1.15rem; }
+    nav button.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    main { max-width: 720px; margin: 0 auto; padding: 16px; }
+    section { display: none; animation: fade 0.2s ease; }
+    section.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 { font-size: 0.9rem; margin: 10px 0 4px; color: var(--primary-dark); }
+    .card p, .card li { font-size: 0.87rem; line-height: 1.5; color: var(--text); }
+    .card ul, .card ol { padding-left: 18px; margin: 6px 0; }
+    .muted { color: var(--muted); font-size: 0.8rem; }
+
+    .badge {
+      display: inline-block;
+      background: rgba(222,41,16,0.1);
+      color: var(--primary-dark);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-bottom: 6px;
+    }
+
+    .step {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: flex-start;
+    }
+    .step .num {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step .txt { font-size: 0.85rem; line-height: 1.45; }
+    .step .txt b { color: var(--primary-dark); }
+
+    .app-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .app-row:last-child { border-bottom: none; }
+    .app-row .ic { font-size: 1.4rem; width: 30px; text-align: center; }
+    .app-row .info b { font-size: 0.86rem; display: block; }
+    .app-row .info span { font-size: 0.76rem; color: var(--muted); }
+
+    .search-box {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      background: var(--card);
+    }
+
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .phrase {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .phrase:last-child { border-bottom: none; }
+    .phrase .left b { font-size: 0.87rem; display: block; }
+    .phrase .left .cn { font-size: 0.95rem; margin-top: 2px; }
+    .phrase .left .py { font-size: 0.78rem; color: var(--muted); }
+    .speak-btn {
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .speak-btn:active { background: var(--primary); }
+
+    .conv-grid {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .conv-field { flex: 1; }
+    .conv-field label { font-size: 0.72rem; color: var(--muted); display: block; margin-bottom: 4px; }
+    .conv-field input, .conv-field select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 1rem;
+    }
+    .conv-swap {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--bg);
+      font-size: 1rem; cursor: pointer; margin-top: 16px; flex-shrink: 0;
+    }
+    .rate-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    .rate-row input { width: 90px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.82rem; }
+    .btn-sm {
+      padding: 6px 12px; border-radius: 8px; border: none;
+      background: var(--primary); color: white; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+    }
+    .btn-sm:disabled { opacity: 0.5; }
+    #rateStatus { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+    table.price-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    table.price-table td { padding: 7px 0; font-size: 0.84rem; border-bottom: 1px solid var(--border); }
+    table.price-table td:last-child { text-align: right; font-weight: 600; color: var(--primary-dark); white-space: nowrap; }
+
+    .sos-num {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .sos-num:last-child { border-bottom: none; }
+    .sos-num b { font-size: 0.86rem; }
+    .sos-num a {
+      background: var(--primary); color: white; text-decoration: none;
+      padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;
+    }
+
+    .note {
+      background: #fff8e1;
+      border-left: 3px solid var(--gold);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      margin-top: 8px;
+      color: #6b5a00;
+    }
+    .note.warn { background: #fdecea; border-left-color: var(--primary); color: var(--primary-dark); }
+
+    footer { text-align: center; padding: 16px; font-size: 0.72rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="star">★</span>
+    <div>
+      <h1>China Travel Helper</h1>
+      <p>Everything you need before &amp; during your trip</p>
+    </div>
+  </header>
+
+  <nav id="tabs">
+    <button class="tab-btn active" data-tab="apps"><span class="ic">📱</span>Apps</button>
+    <button class="tab-btn" data-tab="pay"><span class="ic">💳</span>Pay</button>
+    <button class="tab-btn" data-tab="phrases"><span class="ic">💬</span>Phrases</button>
+    <button class="tab-btn" data-tab="money"><span class="ic">💰</span>Money</button>
+    <button class="tab-btn" data-tab="transit"><span class="ic">🚄</span>Transit</button>
+    <button class="tab-btn" data-tab="visa"><span class="ic">🛂</span>Visa</button>
+    <button class="tab-btn" data-tab="sos"><span class="ic">🆘</span>SOS</button>
+  </nav>
+
+  <main>
+
+    <!-- APPS & VPN -->
+    <section id="apps" class="active">
+      <div class="card">
+        <h2>📶 Get connected before you land</h2>
+        <p>Many Western apps and sites (Google, Maps, Gmail, WhatsApp, Facebook, Instagram, X) are blocked in mainland China. Set this up <b>before you arrive</b> — VPN apps and their websites are also often blocked once you're inside the firewall.</p>
+        <div class="note warn">Install and test your VPN app while still on home Wi-Fi. Choose one with dedicated China servers/protocols (e.g. built for bypassing the Great Firewall) rather than a generic VPN. Have a second one as backup.</div>
+        <h3>SIM / data options</h3>
+        <ul>
+          <li>eSIM (e.g. Alipay's own data plans, or international eSIM providers) — easiest, activates before you land.</li>
+          <li>Physical China SIM from China Unicom/Mobile/Telecom at the airport (needs passport).</li>
+          <li>Roaming on your home SIM — simplest but pricier; check if your carrier blocks the sites above anyway.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Essential apps to install first</h2>
+        <div class="app-row"><span class="ic">🅰️</span><div class="info"><b>Alipay (支付宝)</b><span>Payments, transit QR codes, translation tool, taxi hailing, top-ups</span></div></div>
+        <div class="app-row"><span class="ic">💬</span><div class="info"><b>WeChat (微信)</b><span>Messaging + payments; many merchants only take one of Alipay/WeChat</span></div></div>
+        <div class="app-row"><span class="ic">🗺️</span><div class="info"><b>Amap / Gaode (高德地图) or Baidu Maps</b><span>Google Maps doesn't work well in China — use a local maps app</span></div></div>
+        <div class="app-row"><span class="ic">🚕</span><div class="info"><b>DiDi (滴滴出行)</b><span>China's Uber — has an English "DiDi International" mode</span></div></div>
+        <div class="app-row"><span class="ic">🀄</span><div class="info"><b>Pleco</b><span>Best offline Chinese dictionary + camera translation</span></div></div>
+        <div class="app-row"><span class="ic">🌐</span><div class="info"><b>A translation app with offline/camera mode</b><span>For menus and signs when you have no signal</span></div></div>
+        <div class="app-row"><span class="ic">🍽️</span><div class="info"><b>Meituan / Dianping (大众点评)</b><span>Restaurant reviews, food delivery, deals — the local Yelp</span></div></div>
+        <div class="app-row"><span class="ic">🚄</span><div class="info"><b>12306 (official rail app)</b><span>Book high-speed rail tickets directly, or use Trip.com</span></div></div>
+        <div class="app-row"><span class="ic">✈️</span><div class="info"><b>Trip.com</b><span>English-friendly booking for trains, flights, hotels</span></div></div>
+      </div>
+    </section>
+
+    <!-- PAYMENTS -->
+    <section id="pay">
+      <div class="card">
+        <h2>💳 China is (almost) cashless</h2>
+        <p>Most shops, taxis, and street stalls expect a QR-code scan via Alipay or WeChat Pay. Foreign physical cards (Visa/Mastercard) are accepted at big hotels and some chains, but not much else. Set up mobile pay before you go out.</p>
+      </div>
+
+      <div class="card">
+        <h2>Setting up Alipay with a foreign card</h2>
+        <div class="step"><span class="num">1</span><span class="txt">Download <b>Alipay</b>, sign up with your phone number.</span></div>
+        <div class="step"><span class="num">2</span><span class="txt">Go to <b>Card</b> → <b>Add Card</b> and link a Visa/Mastercard/Amex/Discover/Diners/JCB — this uses Alipay's "Tour Pass" for international visitors.</span></div>
+        <div class="step"><span class="num">3</span><span class="txt">Verify your identity with your <b>passport</b> (photo + selfie).</span></div>
+        <div class="step"><span class="num">4</span><span class="txt">Top up a small balance or let it charge your card directly per transaction (small service fee may apply above a monthly free quota).</span></div>
+        <div class="step"><span class="num">5</span><span class="txt">To pay: open Alipay → <b>Scan</b> (or show your <b>Pay/Collect QR code</b> for the cashier to scan) → confirm amount.</span></div>
+        <p class="muted">WeChat Pay has a similar "foreign card binding" flow under Wallet → Add Card. Setting up both is safer since not every vendor accepts both apps.</p>
+      </div>
+
+      <div class="card">
+        <h2>Good to know</h2>
+        <ul>
+          <li>Carry some cash (¥) as backup — a few small vendors, markets, and rural areas are cash-only or app-setup can glitch.</li>
+          <li>UnionPay ATMs at banks/airports let you withdraw cash from foreign cards.</li>
+          <li>Tipping is not customary/expected in mainland China.</li>
+          <li>Bargaining is common at markets, not in regular shops, restaurants, or malls.</li>
+          <li>Tell your home bank you're travelling, so foreign-currency top-ups aren't flagged as fraud.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- PHRASES -->
+    <section id="phrases">
+      <div class="card">
+        <h2>💬 Phrasebook</h2>
+        <input class="search-box" id="phraseSearch" type="text" placeholder="Search phrases (English or pinyin)..." />
+        <div class="chips" id="phraseChips"></div>
+        <div id="phraseList"></div>
+        <p class="muted" id="ttsNote" style="display:none">Tap 🔊 to hear the phrase spoken aloud (uses your device's text-to-speech).</p>
+      </div>
+    </section>
+
+    <!-- MONEY -->
+    <section id="money">
+      <div class="card">
+        <h2>💰 Currency converter</h2>
+        <div class="conv-grid">
+          <div class="conv-field">
+            <label id="fromLabel">USD</label>
+            <input type="number" id="fromAmount" value="100" inputmode="decimal" />
+          </div>
+          <button class="conv-swap" id="swapBtn">⇄</button>
+          <div class="conv-field">
+            <label>CNY (¥)</label>
+            <input type="number" id="toAmount" inputmode="decimal" />
+          </div>
+        </div>
+        <div class="conv-grid">
+          <div class="conv-field">
+            <label>Your currency</label>
+            <select id="currencySelect">
+              <option value="USD">USD — US Dollar</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="GBP">GBP — British Pound</option>
+              <option value="AUD">AUD — Australian Dollar</option>
+              <option value="CAD">CAD — Canadian Dollar</option>
+              <option value="JPY">JPY — Japanese Yen</option>
+              <option value="KRW">KRW — Korean Won</option>
+              <option value="SGD">SGD — Singapore Dollar</option>
+              <option value="HKD">HKD — Hong Kong Dollar</option>
+              <option value="NZD">NZD — New Zealand Dollar</option>
+            </select>
+          </div>
+        </div>
+        <div class="rate-row">
+          <span class="muted">1 <span id="rateCode">USD</span> =</span>
+          <input type="number" id="rateInput" value="7.15" step="0.01" />
+          <span class="muted">CNY</span>
+          <button class="btn-sm" id="liveRateBtn">Get live rate</button>
+        </div>
+        <div id="rateStatus">Rates are approximate — edit manually or fetch a live rate (needs internet).</div>
+      </div>
+
+      <div class="card">
+        <h2>Typical prices in China</h2>
+        <table class="price-table" id="priceTable">
+          <tr><td>Bottled water</td><td data-cny="3">¥3</td></tr>
+          <tr><td>Subway ride (single city)</td><td data-cny="5">¥5</td></tr>
+          <tr><td>Local bus ride</td><td data-cny="2">¥2</td></tr>
+          <tr><td>Taxi/DiDi starting fare</td><td data-cny="14">¥14</td></tr>
+          <tr><td>Street food snack</td><td data-cny="10">¥10</td></tr>
+          <tr><td>Casual restaurant meal (1 person)</td><td data-cny="40">¥40</td></tr>
+          <tr><td>Mid-range restaurant meal (1 person)</td><td data-cny="120">¥120</td></tr>
+          <tr><td>Coffee (chain café)</td><td data-cny="28">¥28</td></tr>
+          <tr><td>High-speed rail, 2nd class (~300km)</td><td data-cny="150">¥150</td></tr>
+          <tr><td>Domestic flight (1–2hr, economy)</td><td data-cny="600">¥600</td></tr>
+          <tr><td>3-star hotel room / night</td><td data-cny="300">¥300</td></tr>
+          <tr><td>Major attraction entry fee</td><td data-cny="80">¥80</td></tr>
+        </table>
+        <p class="muted">Auto-converted using the rate above — tap "Get live rate" or edit it for accuracy.</p>
+      </div>
+    </section>
+
+    <!-- TRANSIT -->
+    <section id="transit">
+      <div class="card">
+        <h2>🚄 High-speed rail</h2>
+        <ul>
+          <li>Book via the official <b>12306</b> app/site or through <b>Trip.com</b> (English UI, small booking fee).</li>
+          <li>Your <b>passport</b> is your ticket — tickets are linked to it, no need to print (in most cities you can tap your passport at the gate; some stations still require collecting a paper ticket first).</li>
+          <li>Arrive 30–45 min early: security screening is like an airport's.</li>
+          <li>Seat classes: Second Class, First Class, Business Class (fastest boarding, best seats).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>🚇 City metro &amp; buses</h2>
+        <ul>
+          <li>Open Alipay or WeChat → <b>Transit QR Code</b> (often called "乘车码") and scan at the gate — works in most major cities.</li>
+          <li>Alternatively buy a rechargeable transit card at any station, or pay cash for single tickets from machines (English available).</li>
+          <li>Use Amap/Baidu Maps for routes — bilingual signage is generally strong in big cities.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>🚕 Taxis &amp; ride-hailing</h2>
+        <ul>
+          <li><b>DiDi</b> (switch app to English / "DiDi International") is the most reliable way to get a ride without speaking Chinese — set pickup/drop-off pins on the map.</li>
+          <li>Street taxis are cheap but drivers rarely speak English — have your destination written in Chinese characters (screenshot from maps) to show them.</li>
+          <li>Airport transfers: Airport Express trains, official taxi queues, or DiDi/pre-booked transfers. Avoid unofficial touts offering rides in the terminal.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- VISA -->
+    <section id="visa">
+      <div class="card">
+        <h2>🛂 Visa basics</h2>
+        <p class="muted">Rules change by nationality and port of entry — always confirm on the Chinese embassy/consulate website for your country before booking.</p>
+        <h3>Common visa types</h3>
+        <ul>
+          <li><b>L (Tourist)</b> — sightseeing, visiting family/friends.</li>
+          <li><b>M (Business)</b> — trade/commercial activity, needs an invitation letter.</li>
+          <li><b>F (Visit)</b> — exchanges, study tours, non-commercial visits.</li>
+          <li><b>Z (Work)</b>, <b>X (Study)</b> — need a sponsoring employer/school.</li>
+        </ul>
+        <h3>Visa-free transit (144 hours)</h3>
+        <p>Many nationalities can transit through eligible cities/regions visa-free for up to 144 hours (6 days) if continuing to a third country/region, entering and exiting through designated ports. Check the current eligible-country list and ports before relying on this.</p>
+        <div class="note">Some nationalities qualify for unilateral visa-free entry for short stays (policy has expanded in recent years) — check your country specifically, it may save you the whole application.</div>
+      </div>
+      <div class="card">
+        <h2>Typical documents needed</h2>
+        <ul>
+          <li>Passport valid 6+ months with blank visa pages.</li>
+          <li>Passport photo (per embassy spec).</li>
+          <li>Flight itinerary (round-trip/onward).</li>
+          <li>Hotel bookings for your whole stay.</li>
+          <li>Invitation letter (for business/family visits).</li>
+          <li>Proof of funds, in some cases.</li>
+        </ul>
+        <h3>After you arrive</h3>
+        <p>If staying at a private residence (not a hotel), you're generally required to register with the local police station within <b>24 hours</b>. Hotels handle this automatically at check-in.</p>
+      </div>
+    </section>
+
+    <!-- SOS -->
+    <section id="sos">
+      <div class="card">
+        <h2>🆘 Emergency numbers</h2>
+        <div class="sos-num"><b>Police</b><a href="tel:110">110</a></div>
+        <div class="sos-num"><b>Ambulance</b><a href="tel:120">120</a></div>
+        <div class="sos-num"><b>Fire</b><a href="tel:119">119</a></div>
+        <div class="sos-num"><b>Traffic accident</b><a href="tel:122">122</a></div>
+        <div class="sos-num"><b>China consular protection hotline</b><a href="tel:+861012308">12308</a></div>
+        <p class="muted" style="margin-top:8px">Dispatchers often only speak Mandarin — if you can, have someone bilingual (hotel staff, translation app) help, or use a translation app's voice mode on speaker.</p>
+      </div>
+      <div class="card">
+        <h2>Before you travel</h2>
+        <ul>
+          <li>Save your embassy/consulate's emergency contact number in your phone — look it up on your government's travel advisory site for China.</li>
+          <li>Get travel insurance that covers medical evacuation.</li>
+          <li>Keep photos of your passport, visa, and insurance policy stored offline (and emailed to yourself).</li>
+          <li>Share your itinerary with someone back home.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>If you need a hospital</h2>
+        <p>Ask your hotel concierge to call ahead and, if possible, send someone with you — few staff at public hospitals speak English. Large cities have international clinics (e.g. hospital "VIP"/international wings) that are more used to foreign patients, at a higher price. Keep all receipts for insurance claims.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>China Travel Helper — informational only, always verify visa &amp; entry rules with an official source before booking.</footer>
+
+  <script>
+    // ---------- Tab navigation ----------
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const sections = document.querySelectorAll('main > section');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        sections.forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+      });
+    });
+
+    // ---------- Phrasebook ----------
+    const PHRASES = [
+      { cat: 'Greetings', en: 'Hello', cn: '你好', py: 'nǐ hǎo' },
+      { cat: 'Greetings', en: 'Thank you', cn: '谢谢', py: 'xiè xie' },
+      { cat: 'Greetings', en: 'You\'re welcome', cn: '不客气', py: 'bú kè qi' },
+      { cat: 'Greetings', en: 'Sorry / excuse me', cn: '不好意思', py: 'bù hǎo yì si' },
+      { cat: 'Greetings', en: 'Goodbye', cn: '再见', py: 'zài jiàn' },
+      { cat: 'Greetings', en: 'Yes', cn: '是 / 对', py: 'shì / duì' },
+      { cat: 'Greetings', en: 'No', cn: '不是 / 不', py: 'bú shì / bù' },
+      { cat: 'Greetings', en: 'Do you speak English?', cn: '你会说英语吗？', py: 'nǐ huì shuō yīngyǔ ma?' },
+      { cat: 'Greetings', en: 'I don\'t understand', cn: '我不明白', py: 'wǒ bù míngbai' },
+      { cat: 'Greetings', en: 'I don\'t speak Chinese', cn: '我不会说中文', py: 'wǒ bú huì shuō zhōngwén' },
+
+      { cat: 'Numbers', en: 'One / Two / Three', cn: '一 / 二 / 三', py: 'yī / èr / sān' },
+      { cat: 'Numbers', en: 'Four / Five / Six', cn: '四 / 五 / 六', py: 'sì / wǔ / liù' },
+      { cat: 'Numbers', en: 'Seven / Eight / Nine / Ten', cn: '七 / 八 / 九 / 十', py: 'qī / bā / jiǔ / shí' },
+      { cat: 'Numbers', en: 'How much is it?', cn: '多少钱？', py: 'duōshao qián?' },
+      { cat: 'Numbers', en: 'Too expensive', cn: '太贵了', py: 'tài guì le' },
+      { cat: 'Numbers', en: 'Can you lower the price?', cn: '能便宜点吗？', py: 'néng piányi diǎn ma?' },
+
+      { cat: 'Transport', en: 'Where is the subway station?', cn: '地铁站在哪里？', py: 'dìtiě zhàn zài nǎlǐ?' },
+      { cat: 'Transport', en: 'I want to go here (show map)', cn: '我要去这里', py: 'wǒ yào qù zhèlǐ' },
+      { cat: 'Transport', en: 'Please use the meter', cn: '请打表', py: 'qǐng dǎ biǎo' },
+      { cat: 'Transport', en: 'Airport', cn: '机场', py: 'jīchǎng' },
+      { cat: 'Transport', en: 'Train station', cn: '火车站', py: 'huǒchē zhàn' },
+      { cat: 'Transport', en: 'Please stop here', cn: '请在这里停', py: 'qǐng zài zhèlǐ tíng' },
+      { cat: 'Transport', en: 'How do I get to...?', cn: '怎么去……？', py: 'zěnme qù...?' },
+
+      { cat: 'Food', en: 'Menu, please', cn: '请给我菜单', py: 'qǐng gěi wǒ càidān' },
+      { cat: 'Food', en: 'I am vegetarian', cn: '我吃素', py: 'wǒ chī sù' },
+      { cat: 'Food', en: 'Not spicy, please', cn: '不要辣', py: 'bú yào là' },
+      { cat: 'Food', en: 'Water (still)', cn: '水', py: 'shuǐ' },
+      { cat: 'Food', en: 'Check / bill, please', cn: '买单', py: 'mǎidān' },
+      { cat: 'Food', en: 'Delicious', cn: '好吃', py: 'hǎo chī' },
+      { cat: 'Food', en: 'I have a food allergy', cn: '我对食物过敏', py: 'wǒ duì shíwù guòmǐn' },
+      { cat: 'Food', en: 'No meat', cn: '不要肉', py: 'bú yào ròu' },
+
+      { cat: 'Hotel', en: 'I have a reservation', cn: '我有预订', py: 'wǒ yǒu yùdìng' },
+      { cat: 'Hotel', en: 'What time is checkout?', cn: '几点退房？', py: 'jǐ diǎn tuì fáng?' },
+      { cat: 'Hotel', en: 'Is there wifi?', cn: '有WiFi吗？', py: 'yǒu wifi ma?' },
+      { cat: 'Hotel', en: 'Key card', cn: '房卡', py: 'fáng kǎ' },
+      { cat: 'Hotel', en: 'Can you call me a taxi?', cn: '可以帮我叫出租车吗？', py: 'kěyǐ bāng wǒ jiào chūzūchē ma?' },
+
+      { cat: 'Emergency', en: 'Help!', cn: '救命！', py: 'jiù mìng!' },
+      { cat: 'Emergency', en: 'Call the police', cn: '请叫警察', py: 'qǐng jiào jǐngchá' },
+      { cat: 'Emergency', en: 'I need a doctor', cn: '我需要医生', py: 'wǒ xūyào yīshēng' },
+      { cat: 'Emergency', en: 'Hospital', cn: '医院', py: 'yīyuàn' },
+      { cat: 'Emergency', en: 'I lost my passport', cn: '我的护照丢了', py: 'wǒ de hùzhào diū le' },
+      { cat: 'Emergency', en: 'Pharmacy', cn: '药店', py: 'yàodiàn' },
+      { cat: 'Emergency', en: 'I am allergic to...', cn: '我对……过敏', py: 'wǒ duì...guòmǐn' },
+    ];
+
+    const chipsEl = document.getElementById('phraseChips');
+    const listEl = document.getElementById('phraseList');
+    const searchEl = document.getElementById('phraseSearch');
+    const categories = ['All', ...new Set(PHRASES.map(p => p.cat))];
+    let activeCat = 'All';
+
+    categories.forEach(cat => {
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (cat === 'All' ? ' active' : '');
+      chip.textContent = cat;
+      chip.addEventListener('click', () => {
+        activeCat = cat;
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        renderPhrases();
+      });
+      chipsEl.appendChild(chip);
+    });
+
+    const canSpeak = 'speechSynthesis' in window;
+    if (canSpeak) document.getElementById('ttsNote').style.display = 'block';
+
+    function speak(text) {
+      if (!canSpeak) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN';
+      u.rate = 0.85;
+      window.speechSynthesis.speak(u);
+    }
+
+    function renderPhrases() {
+      const q = searchEl.value.trim().toLowerCase();
+      listEl.innerHTML = '';
+      PHRASES
+        .filter(p => activeCat === 'All' || p.cat === activeCat)
+        .filter(p => !q || p.en.toLowerCase().includes(q) || p.py.toLowerCase().includes(q))
+        .forEach(p => {
+          const row = document.createElement('div');
+          row.className = 'phrase';
+          row.innerHTML = `
+            <div class="left">
+              <b>${p.en}</b>
+              <div class="cn">${p.cn}</div>
+              <div class="py">${p.py}</div>
+            </div>
+            ${canSpeak ? '<button class="speak-btn" aria-label="Speak">🔊</button>' : ''}
+          `;
+          if (canSpeak) row.querySelector('.speak-btn').addEventListener('click', () => speak(p.cn));
+          listEl.appendChild(row);
+        });
+      if (!listEl.children.length) {
+        listEl.innerHTML = '<p class="muted">No phrases match.</p>';
+      }
+    }
+    searchEl.addEventListener('input', renderPhrases);
+    renderPhrases();
+
+    // ---------- Currency converter ----------
+    const DEFAULT_RATES = { USD: 7.15, EUR: 7.75, GBP: 9.05, AUD: 4.75, CAD: 5.20, JPY: 0.048, KRW: 0.0052, SGD: 5.30, HKD: 0.92, NZD: 4.35 };
+    const fromAmount = document.getElementById('fromAmount');
+    const toAmount = document.getElementById('toAmount');
+    const rateInput = document.getElementById('rateInput');
+    const currencySelect = document.getElementById('currencySelect');
+    const fromLabel = document.getElementById('fromLabel');
+    const rateCode = document.getElementById('rateCode');
+    const rateStatus = document.getElementById('rateStatus');
+    const liveRateBtn = document.getElementById('liveRateBtn');
+    const priceTable = document.getElementById('priceTable');
+
+    function currentRate() { return parseFloat(rateInput.value) || 0; }
+
+    function updateToFromFrom() {
+      const rate = currentRate();
+      toAmount.value = ((parseFloat(fromAmount.value) || 0) * rate).toFixed(2);
+      updatePriceTable(rate);
+    }
+    function updateFromFromTo() {
+      const rate = currentRate();
+      fromAmount.value = rate ? ((parseFloat(toAmount.value) || 0) / rate).toFixed(2) : 0;
+      updatePriceTable(rate);
+    }
+    function updatePriceTable(rate) {
+      const code = currencySelect.value;
+      priceTable.querySelectorAll('tr').forEach(tr => {
+        const cell = tr.children[1];
+        const cny = parseFloat(cell.dataset.cny);
+        const converted = rate ? (cny / rate) : 0;
+        cell.textContent = `¥${cny} (~${converted.toFixed(2)} ${code})`;
+      });
+    }
+
+    currencySelect.addEventListener('change', () => {
+      const code = currencySelect.value;
+      fromLabel.textContent = code;
+      rateCode.textContent = code;
+      rateInput.value = DEFAULT_RATES[code];
+      rateStatus.textContent = 'Rates are approximate — edit manually or fetch a live rate (needs internet).';
+      updateToFromFrom();
+    });
+    fromAmount.addEventListener('input', updateToFromFrom);
+    toAmount.addEventListener('input', updateFromFromTo);
+    rateInput.addEventListener('input', updateToFromFrom);
+    document.getElementById('swapBtn').addEventListener('click', () => {
+      [fromAmount.value, toAmount.value] = [toAmount.value, fromAmount.value];
+      updateFromFromTo();
+    });
+
+    liveRateBtn.addEventListener('click', async () => {
+      const code = currencySelect.value;
+      liveRateBtn.disabled = true;
+      liveRateBtn.textContent = 'Fetching…';
+      try {
+        const res = await fetch(`https://open.er-api.com/v6/latest/${code}`);
+        if (!res.ok) throw new Error('bad response');
+        const data = await res.json();
+        const rate = data && data.rates && data.rates.CNY;
+        if (!rate) throw new Error('no rate');
+        rateInput.value = rate.toFixed(4);
+        rateStatus.textContent = `Live rate as of ${data.time_last_update_utc || 'now'}.`;
+        updateToFromFrom();
+      } catch (err) {
+        rateStatus.textContent = 'Could not fetch a live rate (offline or blocked). Using manual rate.';
+      } finally {
+        liveRateBtn.disabled = false;
+        liveRateBtn.textContent = 'Get live rate';
+      }
+    });
+
+    updateToFromFrom();
+
+    // ---------- Service worker ----------
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

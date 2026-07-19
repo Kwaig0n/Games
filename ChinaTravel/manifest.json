@@ -1,0 +1,14 @@
+{
+  "name": "China Travel Helper",
+  "short_name": "China Travel",
+  "description": "Payments, phrasebook, currency, transit, visa and emergency info for travelling to China",
+  "start_url": "./china_travel.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#de2910",
+  "theme_color": "#de2910",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
