@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📚 Mandarin Reader · Pinyin Stories</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(145deg, #f8f4f0 0%, #efeae4 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .app {
+      max-width: 900px;
+      width: 100%;
+      background: rgba(255, 250, 245, 0.8);
+      backdrop-filter: blur(8px);
+      border-radius: 48px;
+      padding: 32px 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 215, 180, 0.4);
+      transition: all 0.2s;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      color: #3e2e24;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .sub {
+      color: #7f6a5c;
+      font-size: 0.95rem;
+      margin-bottom: 28px;
+      border-left: 4px solid #dbb8a2;
+      padding-left: 16px;
+      font-weight: 400;
+    }
+
+    .story-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .story-btn {
+      background: #f0e7df;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 60px;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #4d3a2c;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      border: 1px solid transparent;
+    }
+
+    .story-btn:hover {
+      background: #e6d9ce;
+      transform: translateY(-2px);
+    }
+
+    .story-btn.active {
+      background: #b48c7a;
+      color: white;
+      box-shadow: 0 8px 18px -6px rgba(130, 80, 60, 0.4);
+      border-color: #a47a66;
+    }
+
+    .card {
+      background: white;
+      border-radius: 32px;
+      padding: 32px 30px;
+      box-shadow: inset 0 1px 4px rgba(255,255,255,0.8), 0 12px 28px -8px rgba(80, 50, 30, 0.12);
+      margin-bottom: 24px;
+    }
+
+    .story-title {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #2d211a;
+      margin-bottom: 6px;
+    }
+
+    .story-origin {
+      color: #9a8476;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+      border-bottom: 2px dashed #e7dbd1;
+      padding-bottom: 16px;
+    }
+
+    .sentence {
+      margin-bottom: 26px;
+      cursor: pointer;
+      border-radius: 16px;
+      padding: 6px 8px;
+      margin-left: -8px;
+      margin-right: -8px;
+      transition: background 0.15s;
+    }
+
+    .char-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      column-gap: 3px;
+      row-gap: 8px;
+    }
+
+    .char-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.15;
+    }
+
+    .hanzi-char {
+      font-size: 1.7rem;
+      font-weight: 500;
+      color: #1e1612;
+    }
+
+    .pinyin-char {
+      display: none;
+      font-size: 0.8rem;
+      color: #8b6f5c;
+      font-weight: 500;
+      margin-top: 3px;
+      white-space: nowrap;
+    }
+
+    .sentence.show-pinyin .pinyin-char {
+      display: block;
+    }
+
+    .translation {
+      margin-top: 6px;
+      color: #5f4c3e;
+      font-size: 1rem;
+      background: #f5ede6;
+      padding: 8px 16px;
+      border-radius: 30px;
+      display: inline-block;
+      font-style: italic;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 18px;
+      margin-top: 12px;
+      padding-top: 16px;
+      border-top: 1px solid #e5d6ca;
+    }
+
+    .toggle-btn {
+      background: #dfcec0;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 60px;
+      font-weight: 500;
+      color: #2d1f18;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .toggle-btn:hover {
+      background: #cfbbab;
+    }
+
+    .toggle-btn.on {
+      background: #b48c7a;
+      color: white;
+      box-shadow: 0 4px 10px rgba(130, 80, 60, 0.2);
+    }
+
+    .progress {
+      margin-left: auto;
+      font-size: 0.95rem;
+      color: #6b5849;
+      background: #ede3da;
+      padding: 6px 20px;
+      border-radius: 60px;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: flex-end;
+      font-size: 0.85rem;
+      color: #ac9688;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 600px) {
+      .app { padding: 20px; }
+      .hanzi-char { font-size: 1.5rem; }
+      .story-btn { padding: 6px 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <h1>📖 读故事 · pinyin</h1>
+    <div class="sub">tap any sentence to hear (speech synthesis) · toggle pinyin</div>
+  </header>
+
+  <!-- story buttons -->
+  <div class="story-selector" id="storySelector"></div>
+
+  <!-- main content -->
+  <div class="card" id="storyCard">
+    <div class="story-title" id="storyTitle">小马过河</div>
+    <div class="story-origin" id="storyOrigin">🌟 中国寓言 ·  adapted</div>
+    <div id="sentencesContainer"></div>
+
+    <div class="controls">
+      <button class="toggle-btn" id="togglePinyinBtn">🔤 显示拼音</button>
+      <button class="toggle-btn" id="toggleTranslationBtn">🌐 显示翻译</button>
+      <span class="progress" id="progressDisplay">句子 1 / 8</span>
+    </div>
+  </div>
+  <div class="footer">👆 点击句子 · 发音 | 故事 + pinyin 学习</div>
+</div>
+
+<script>
+  (function() {
+    // -------- story data (hanzi, pinyin, translation) --------
+    const STORIES = [
+      {
+        id: 'horse',
+        title: '小马过河',
+        origin: '🌟 中国寓言 ·  adapted',
+        sentences: [
+          { chars: [['小','xiǎo'],['马','mǎ'],['要','yào'],['过','guò'],['河','hé'],['。','']], translation: 'The little horse wants to cross the river.' },
+          { chars: [['牛','niú'],['说','shuō'],[':',''],['"',''],['水','shuǐ'],['很','hěn'],['浅','qiǎn'],['。',''],['"','']], translation: 'The cow says: "The water is very shallow."' },
+          { chars: [['松','sōng'],['鼠','shǔ'],['说','shuō'],[':',''],['"',''],['水','shuǐ'],['很','hěn'],['深','shēn'],['!',''],['"','']], translation: 'The squirrel says: "The water is very deep!"' },
+          { chars: [['小','xiǎo'],['马','mǎ'],['不','bù'],['知','zhī'],['道','dào'],['怎','zěn'],['么','me'],['办','bàn'],['。','']], translation: 'The little horse doesn\'t know what to do.' },
+          { chars: [['妈','mā'],['妈','ma'],['告','gào'],['诉','su'],['小','xiǎo'],['马','mǎ'],[':','']], translation: 'Mother tells the little horse:' },
+          { chars: [['"',''],['要','yào'],['自','zì'],['己','jǐ'],['试','shì'],['一','yī'],['试','shì'],['。',''],['"','']], translation: '"You must try it yourself."' },
+          { chars: [['小','xiǎo'],['马','mǎ'],['小','xiǎo'],['心','xīn'],['地','de'],['下','xià'],['了','le'],['河','hé'],['。','']], translation: 'The little horse carefully goes into the river.' },
+          { chars: [['水','shuǐ'],['不','bù'],['深','shēn'],['也','yě'],['不','bù'],['浅','qiǎn'],['。','']], translation: 'The water is neither deep nor shallow.' }
+        ]
+      },
+      {
+        id: 'fox',
+        title: '狐狸和葡萄',
+        origin: '🦊 伊索寓言 · 改编',
+        sentences: [
+          { chars: [['狐','hú'],['狸','lí'],['看','kàn'],['见','jiàn'],['葡','pú'],['萄','táo'],['架','jià'],['。','']], translation: 'The fox sees the grapevine.' },
+          { chars: [['葡','pú'],['萄','táo'],['很','hěn'],['高','gāo'],[',',''],['很','hěn'],['大','dà'],['。','']], translation: 'The grapes are high and big.' },
+          { chars: [['狐','hú'],['狸','lí'],['想','xiǎng'],['吃','chī'],['葡','pú'],['萄','táo'],['。','']], translation: 'The fox wants to eat the grapes.' },
+          { chars: [['它','tā'],['跳','tiào'],['了','le'],['很','hěn'],['多','duō'],['次','cì'],['。','']], translation: 'It jumps many times.' },
+          { chars: [['还','hái'],['是','shì'],['够','gòu'],['不','bù'],['到','dào'],['。','']], translation: 'Still can\'t reach them.' },
+          { chars: [['狐','hú'],['狸','lí'],['说','shuō'],[':',''],['"',''],['葡','pú'],['萄','táo'],['很','hěn'],['酸','suān'],['。',''],['"','']], translation: 'The fox says: "The grapes are sour."' },
+          { chars: [['它','tā'],['就','jiù'],['走','zǒu'],['开','kāi'],['了','le'],['。','']], translation: 'So it walks away.' }
+        ]
+      },
+      {
+        id: 'family',
+        title: '我的家',
+        origin: '👨‍👩‍👧 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['家','jiā'],['有','yǒu'],['四','sì'],['个','gè'],['人','rén'],['。','']], translation: 'My family has four people.' },
+          { chars: [['爸','bà'],['爸','ba'],['是','shì'],['医','yī'],['生','shēng'],['。','']], translation: 'Dad is a doctor.' },
+          { chars: [['妈','mā'],['妈','ma'],['是','shì'],['老','lǎo'],['师','shī'],['。','']], translation: 'Mom is a teacher.' },
+          { chars: [['我','wǒ'],['有','yǒu'],['一','yí'],['个','gè'],['哥','gē'],['哥','ge'],['。','']], translation: 'I have an older brother.' },
+          { chars: [['哥','gē'],['哥','ge'],['在','zài'],['北','běi'],['京','jīng'],['工','gōng'],['作','zuò'],['。','']], translation: 'Brother works in Beijing.' },
+          { chars: [['我','wǒ'],['们','men'],['家','jiā'],['很','hěn'],['小','xiǎo'],['。','']], translation: 'Our home is small.' },
+          { chars: [['但','dàn'],['是','shì'],['很','hěn'],['干','gān'],['净','jìng'],['。','']], translation: "But it's very clean." },
+          { chars: [['我','wǒ'],['们','men'],['都','dōu'],['很','hěn'],['高','gāo'],['兴','xìng'],['。','']], translation: 'We are all happy.' },
+          { chars: [['星','xīng'],['期','qī'],['天','tiān'],['我','wǒ'],['们','men'],['一','yì'],['起','qǐ'],['吃','chī'],['饭','fàn'],['。','']], translation: 'On Sundays we eat together.' },
+          { chars: [['妈','mā'],['妈','ma'],['做','zuò'],['的','de'],['菜','cài'],['很','hěn'],['好','hǎo'],['吃','chī'],['。','']], translation: 'The food Mom makes is delicious.' },
+          { chars: [['爸','bà'],['爸','ba'],['喜','xǐ'],['欢','huān'],['喝','hē'],['茶','chá'],['。','']], translation: 'Dad likes to drink tea.' },
+          { chars: [['哥','gē'],['哥','ge'],['喜','xǐ'],['欢','huān'],['看','kàn'],['书','shū'],['。','']], translation: 'Brother likes to read books.' },
+          { chars: [['我','wǒ'],['爱','ài'],['我','wǒ'],['的','de'],['家','jiā'],['。','']], translation: 'I love my family.' },
+          { chars: [['晚','wǎn'],['上','shang'],['我','wǒ'],['们','men'],['一','yì'],['起','qǐ'],['看','kàn'],['电','diàn'],['视','shì'],['。','']], translation: 'In the evening we watch TV together.' },
+          { chars: [['我','wǒ'],['的','de'],['家','jiā'],['很','hěn'],['好','hǎo'],['。','']], translation: 'My home is very nice.' }
+        ]
+      },
+      {
+        id: 'myday',
+        title: '我的一天',
+        origin: '⏰ HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['每','měi'],['天','tiān'],['七','qī'],['点','diǎn'],['起','qǐ'],['床','chuáng'],['。','']], translation: 'I get up at 7 every day.' },
+          { chars: [['我','wǒ'],['先','xiān'],['刷','shuā'],['牙','yá'],['洗','xǐ'],['脸','liǎn'],['。','']], translation: 'First I brush my teeth and wash my face.' },
+          { chars: [['然','rán'],['后','hòu'],['我','wǒ'],['吃','chī'],['早','zǎo'],['饭','fàn'],['。','']], translation: 'Then I eat breakfast.' },
+          { chars: [['八','bā'],['点','diǎn'],['我','wǒ'],['去','qù'],['学','xué'],['校','xiào'],['。','']], translation: 'At 8 I go to school.' },
+          { chars: [['我','wǒ'],['在','zài'],['学','xué'],['校','xiào'],['学','xué'],['习','xí'],['。','']], translation: 'I study at school.' },
+          { chars: [['中','zhōng'],['午','wǔ'],['我','wǒ'],['和','hé'],['朋','péng'],['友','you'],['吃','chī'],['饭','fàn'],['。','']], translation: 'At noon I eat with friends.' },
+          { chars: [['下','xià'],['午','wǔ'],['三','sān'],['点','diǎn'],['放','fàng'],['学','xué'],['。','']], translation: 'School ends at 3 in the afternoon.' },
+          { chars: [['晚','wǎn'],['上','shang'],['我','wǒ'],['做','zuò'],['作','zuò'],['业','yè'],['。','']], translation: 'In the evening I do homework.' },
+          { chars: [['我','wǒ'],['也','yě'],['看','kàn'],['一','yì'],['点','diǎn'],['儿','er'],['电','diàn'],['视','shì'],['。','']], translation: 'I also watch a little TV.' },
+          { chars: [['十','shí'],['点','diǎn'],['我','wǒ'],['睡','shuì'],['觉','jiào'],['。','']], translation: 'I go to sleep at 10.' },
+          { chars: [['我','wǒ'],['的','de'],['一','yì'],['天','tiān'],['很','hěn'],['忙','máng'],['。','']], translation: 'My day is very busy.' },
+          { chars: [['但','dàn'],['是','shì'],['我','wǒ'],['很','hěn'],['高','gāo'],['兴','xìng'],['。','']], translation: 'But I am very happy.' },
+          { chars: [['我','wǒ'],['喜','xǐ'],['欢','huān'],['我','wǒ'],['的','de'],['生','shēng'],['活','huó'],['。','']], translation: 'I like my life.' }
+        ]
+      },
+      {
+        id: 'weather',
+        title: '今天天气',
+        origin: '☀️ HSK1-2 · 原创',
+        sentences: [
+          { chars: [['今','jīn'],['天','tiān'],['天','tiān'],['气','qì'],['很','hěn'],['好','hǎo'],['。','']], translation: "Today's weather is very good." },
+          { chars: [['天','tiān'],['很','hěn'],['蓝','lán'],[',',''],['风','fēng'],['很','hěn'],['小','xiǎo'],['。','']], translation: 'The sky is very blue, the wind is light.' },
+          { chars: [['我','wǒ'],['和','hé'],['朋','péng'],['友','you'],['去','qù'],['公','gōng'],['园','yuán'],['。','']], translation: 'My friend and I go to the park.' },
+          { chars: [['公','gōng'],['园','yuán'],['里','li'],['有','yǒu'],['很','hěn'],['多','duō'],['花','huā'],['。','']], translation: 'There are many flowers in the park.' },
+          { chars: [['我','wǒ'],['们','men'],['一','yì'],['起','qǐ'],['散','sàn'],['步','bù'],['。','']], translation: 'We take a walk together.' },
+          { chars: [['中','zhōng'],['午','wǔ'],['天','tiān'],['气','qì'],['变','biàn'],['热','rè'],['了','le'],['。','']], translation: 'At noon the weather turned hot.' },
+          { chars: [['下','xià'],['午','wǔ'],['突','tū'],['然','rán'],['下','xià'],['雨','yǔ'],['了','le'],['。','']], translation: 'In the afternoon it suddenly rained.' },
+          { chars: [['我','wǒ'],['们','men'],['没','méi'],['有','yǒu'],['伞','sǎn'],['。','']], translation: "We didn't have an umbrella." },
+          { chars: [['我','wǒ'],['们','men'],['跑','pǎo'],['回','huí'],['家','jiā'],['了','le'],['。','']], translation: 'We ran back home.' },
+          { chars: [['到','dào'],['家','jiā'],['的','de'],['时','shí'],['候','hou'],[',',''],['我','wǒ'],['们','men'],['都','dōu'],['很','hěn'],['累','lèi'],['。','']], translation: 'When we got home, we were all tired.' },
+          { chars: [['但','dàn'],['是','shì'],['今','jīn'],['天','tiān'],['很','hěn'],['快','kuài'],['乐','lè'],['。','']], translation: 'But today was very happy.' },
+          { chars: [['我','wǒ'],['喜','xǐ'],['欢','huān'],['下','xià'],['雨','yǔ'],['天','tiān'],['。','']], translation: 'I like rainy days.' }
+        ]
+      },
+      {
+        id: 'friend',
+        title: '我的朋友',
+        origin: '👫 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['有','yǒu'],['一','yí'],['个','gè'],['好','hǎo'],['朋','péng'],['友','you'],['。','']], translation: 'I have a good friend.' },
+          { chars: [['她','tā'],['叫','jiào'],['小','xiǎo'],['美','měi'],['。','']], translation: "Her name is Xiaomei." },
+          { chars: [['小','xiǎo'],['美','měi'],['很','hěn'],['聪','cōng'],['明','ming'],['。','']], translation: 'Xiaomei is very smart.' },
+          { chars: [['她','tā'],['也','yě'],['很','hěn'],['漂','piào'],['亮','liang'],['。','']], translation: 'She is also very pretty.' },
+          { chars: [['我','wǒ'],['们','men'],['是','shì'],['同','tóng'],['学','xué'],['。','']], translation: 'We are classmates.' },
+          { chars: [['我','wǒ'],['们','men'],['常','cháng'],['常','cháng'],['一','yì'],['起','qǐ'],['学','xué'],['习','xí'],['。','']], translation: 'We often study together.' },
+          { chars: [['周','zhōu'],['末','mò'],['我','wǒ'],['们','men'],['一','yì'],['起','qǐ'],['看','kàn'],['电','diàn'],['影','yǐng'],['。','']], translation: 'On weekends we watch movies together.' },
+          { chars: [['小','xiǎo'],['美','měi'],['喜','xǐ'],['欢','huān'],['唱','chàng'],['歌','gē'],['。','']], translation: 'Xiaomei likes to sing.' },
+          { chars: [['我','wǒ'],['喜','xǐ'],['欢','huān'],['跳','tiào'],['舞','wǔ'],['。','']], translation: 'I like to dance.' },
+          { chars: [['我','wǒ'],['们','men'],['的','de'],['爱','ài'],['好','hào'],['不','bù'],['一','yí'],['样','yàng'],['。','']], translation: 'Our hobbies are different.' },
+          { chars: [['但','dàn'],['是','shì'],['我','wǒ'],['们','men'],['是','shì'],['好','hǎo'],['朋','péng'],['友','you'],['。','']], translation: 'But we are good friends.' },
+          { chars: [['我','wǒ'],['很','hěn'],['喜','xǐ'],['欢','huān'],['她','tā'],['。','']], translation: 'I like her very much.' },
+          { chars: [['朋','péng'],['友','you'],['让','ràng'],['我','wǒ'],['很','hěn'],['快','kuài'],['乐','lè'],['。','']], translation: 'Friends make me very happy.' }
+        ]
+      },
+      {
+        id: 'weekend',
+        title: '周末',
+        origin: '🎉 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['周','zhōu'],['末','mò'],['我','wǒ'],['不','bú'],['上','shàng'],['学','xué'],['。','']], translation: "On weekends I don't go to school." },
+          { chars: [['我','wǒ'],['可','kě'],['以','yǐ'],['晚','wǎn'],['一','yì'],['点','diǎn'],['儿','er'],['起','qǐ'],['床','chuáng'],['。','']], translation: 'I can get up a little later.' },
+          { chars: [['早','zǎo'],['上','shang'],['我','wǒ'],['和','hé'],['爸','bà'],['爸','ba'],['去','qù'],['爬','pá'],['山','shān'],['。','']], translation: 'In the morning my dad and I go hiking.' },
+          { chars: [['山','shān'],['上','shang'],['的','de'],['风','fēng'],['景','jǐng'],['很','hěn'],['美','měi'],['。','']], translation: 'The scenery on the mountain is beautiful.' },
+          { chars: [['中','zhōng'],['午','wǔ'],['我','wǒ'],['们','men'],['在','zài'],['山','shān'],['上','shang'],['吃','chī'],['饭','fàn'],['。','']], translation: 'At noon we eat on the mountain.' },
+          { chars: [['下','xià'],['午','wǔ'],['我','wǒ'],['和','hé'],['妈','mā'],['妈','ma'],['去','qù'],['买','mǎi'],['东','dōng'],['西','xi'],['。','']], translation: 'In the afternoon my mom and I go shopping.' },
+          { chars: [['商','shāng'],['店','diàn'],['里','li'],['的','de'],['衣','yī'],['服','fu'],['很','hěn'],['漂','piào'],['亮','liang'],['。','']], translation: 'The clothes in the store are very pretty.' },
+          { chars: [['但','dàn'],['是','shì'],['有','yǒu'],['一','yì'],['点','diǎn'],['儿','er'],['贵','guì'],['。','']], translation: 'But they are a little expensive.' },
+          { chars: [['晚','wǎn'],['上','shang'],['我','wǒ'],['们','men'],['全','quán'],['家','jiā'],['吃','chī'],['晚','wǎn'],['饭','fàn'],['。','']], translation: 'In the evening our whole family eats dinner.' },
+          { chars: [['周','zhōu'],['末','mò'],['过','guò'],['得','de'],['很','hěn'],['开','kāi'],['心','xīn'],['。','']], translation: 'The weekend was very enjoyable.' }
+        ]
+      },
+      {
+        id: 'shopping',
+        title: '去商店买东西',
+        origin: '🛍️ HSK1-2 · 原创',
+        sentences: [
+          { chars: [['今','jīn'],['天','tiān'],['我','wǒ'],['去','qù'],['商','shāng'],['店','diàn'],['。','']], translation: 'Today I went to the store.' },
+          { chars: [['我','wǒ'],['想','xiǎng'],['买','mǎi'],['一','yí'],['件','jiàn'],['衣','yī'],['服','fu'],['。','']], translation: 'I wanted to buy a piece of clothing.' },
+          { chars: [['商','shāng'],['店','diàn'],['里','li'],['的','de'],['人','rén'],['很','hěn'],['多','duō'],['。','']], translation: 'There were many people in the store.' },
+          { chars: [['服','fú'],['务','wù'],['员','yuán'],['很','hěn'],['热','rè'],['情','qíng'],['。','']], translation: 'The clerk was very friendly.' },
+          { chars: [['她','tā'],['帮','bāng'],['我','wǒ'],['找','zhǎo'],['衣','yī'],['服','fu'],['。','']], translation: 'She helped me find clothes.' },
+          { chars: [['这','zhè'],['件','jiàn'],['衣','yī'],['服','fu'],['很','hěn'],['好','hǎo'],['看','kàn'],['。','']], translation: 'This piece of clothing looks great.' },
+          { chars: [['可','kě'],['是','shì'],['有','yǒu'],['一','yì'],['点','diǎn'],['儿','er'],['贵','guì'],['。','']], translation: 'But it was a little expensive.' },
+          { chars: [['我','wǒ'],['问','wèn'],['她','tā'],['能','néng'],['不','bu'],['能','néng'],['便','pián'],['宜','yi'],['一','yì'],['点','diǎn'],['儿','er'],['。','']], translation: 'I asked her if it could be a bit cheaper.' },
+          { chars: [['服','fú'],['务','wù'],['员','yuán'],['说','shuō'],['可','kě'],['以','yǐ'],['。','']], translation: 'The clerk said yes.' },
+          { chars: [['我','wǒ'],['很','hěn'],['高','gāo'],['兴','xìng'],['地','de'],['买','mǎi'],['了','le'],['衣','yī'],['服','fu'],['。','']], translation: 'I happily bought the clothes.' },
+          { chars: [['我','wǒ'],['今','jīn'],['天','tiān'],['很','hěn'],['开','kāi'],['心','xīn'],['。','']], translation: 'I was very happy today.' }
+        ]
+      },
+      {
+        id: 'school',
+        title: '我的学校',
+        origin: '🏫 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['的','de'],['学','xué'],['校','xiào'],['很','hěn'],['大','dà'],['。','']], translation: 'My school is very big.' },
+          { chars: [['学','xué'],['校','xiào'],['里','li'],['有','yǒu'],['很','hěn'],['多','duō'],['学','xué'],['生','sheng'],['。','']], translation: 'There are many students in the school.' },
+          { chars: [['老','lǎo'],['师','shī'],['们','men'],['都','dōu'],['很','hěn'],['好','hǎo'],['。','']], translation: 'The teachers are all very nice.' },
+          { chars: [['我','wǒ'],['最','zuì'],['喜','xǐ'],['欢','huān'],['的','de'],['老','lǎo'],['师','shī'],['教','jiāo'],['中','Zhōng'],['文','wén'],['。','']], translation: 'My favorite teacher teaches Chinese.' },
+          { chars: [['她','tā'],['说','shuō'],['话','huà'],['很','hěn'],['清','qīng'],['楚','chu'],['。','']], translation: 'She speaks very clearly.' },
+          { chars: [['上','shàng'],['课','kè'],['的','de'],['时','shí'],['候','hou'],['我','wǒ'],['很','hěn'],['认','rèn'],['真','zhēn'],['。','']], translation: 'During class I am very focused.' },
+          { chars: [['下','xià'],['课','kè'],['以','yǐ'],['后','hòu'],['我','wǒ'],['和','hé'],['同','tóng'],['学','xué'],['玩','wán'],['儿','er'],['。','']], translation: 'After class I play with classmates.' },
+          { chars: [['学','xué'],['校','xiào'],['有','yǒu'],['一','yí'],['个','gè'],['图','tú'],['书','shū'],['馆','guǎn'],['。','']], translation: 'The school has a library.' },
+          { chars: [['我','wǒ'],['常','cháng'],['常','cháng'],['去','qù'],['那','nà'],['里','li'],['看','kàn'],['书','shū'],['。','']], translation: 'I often go there to read.' },
+          { chars: [['我','wǒ'],['喜','xǐ'],['欢','huān'],['我','wǒ'],['的','de'],['学','xué'],['校','xiào'],['。','']], translation: 'I like my school.' },
+          { chars: [['每','měi'],['天','tiān'],['上','shàng'],['学','xué'],['我','wǒ'],['都','dōu'],['很','hěn'],['开','kāi'],['心','xīn'],['。','']], translation: 'Every day I go to school happily.' }
+        ]
+      },
+      {
+        id: 'birthday',
+        title: '生日快乐',
+        origin: '🎂 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['今','jīn'],['天','tiān'],['是','shì'],['我','wǒ'],['的','de'],['生','shēng'],['日','rì'],['。','']], translation: "Today is my birthday." },
+          { chars: [['我','wǒ'],['今','jīn'],['年','nián'],['八','bā'],['岁','suì'],['了','le'],['。','']], translation: 'I am eight years old this year.' },
+          { chars: [['爸','bà'],['爸','ba'],['妈','mā'],['妈','ma'],['给','gěi'],['我','wǒ'],['买','mǎi'],['了','le'],['蛋','dàn'],['糕','gāo'],['。','']], translation: 'Mom and Dad bought me a cake.' },
+          { chars: [['蛋','dàn'],['糕','gāo'],['上','shang'],['有','yǒu'],['八','bā'],['根','gēn'],['蜡','là'],['烛','zhú'],['。','']], translation: 'There are eight candles on the cake.' },
+          { chars: [['我','wǒ'],['的','de'],['朋','péng'],['友','you'],['们','men'],['都','dōu'],['来','lái'],['了','le'],['。','']], translation: 'All my friends came.' },
+          { chars: [['大','dà'],['家','jiā'],['一','yì'],['起','qǐ'],['唱','chàng'],['生','shēng'],['日','rì'],['歌','gē'],['。','']], translation: 'Everyone sang the birthday song together.' },
+          { chars: [['我','wǒ'],['许','xǔ'],['了','le'],['一','yí'],['个','gè'],['愿','yuàn'],['望','wàng'],['。','']], translation: 'I made a wish.' },
+          { chars: [['朋','péng'],['友','you'],['送','sòng'],['给','gěi'],['我','wǒ'],['很','hěn'],['多','duō'],['礼','lǐ'],['物','wù'],['。','']], translation: 'Friends gave me many gifts.' },
+          { chars: [['我','wǒ'],['收','shōu'],['到','dào'],['礼','lǐ'],['物','wù'],['很','hěn'],['开','kāi'],['心','xīn'],['。','']], translation: 'I was very happy to receive gifts.' },
+          { chars: [['这','zhè'],['是','shì'],['快','kuài'],['乐','lè'],['的','de'],['一','yì'],['天','tiān'],['。','']], translation: 'This was a happy day.' },
+          { chars: [['我','wǒ'],['很','hěn'],['谢','xiè'],['谢','xie'],['大','dà'],['家','jiā'],['。','']], translation: 'I thank everyone very much.' }
+        ]
+      },
+      {
+        id: 'catdog',
+        title: '猫和狗',
+        origin: '🐱 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['家','jiā'],['有','yǒu'],['一','yì'],['只','zhī'],['猫','māo'],['和','hé'],['一','yì'],['只','zhī'],['狗','gǒu'],['。','']], translation: 'My family has a cat and a dog.' },
+          { chars: [['猫','māo'],['的','de'],['名','míng'],['字','zi'],['叫','jiào'],['小','xiǎo'],['白','bái'],['。','']], translation: "The cat's name is Xiaobai." },
+          { chars: [['狗','gǒu'],['的','de'],['名','míng'],['字','zi'],['叫','jiào'],['大','dà'],['黄','huáng'],['。','']], translation: "The dog's name is Dahuang." },
+          { chars: [['小','xiǎo'],['白','bái'],['很','hěn'],['喜','xǐ'],['欢','huān'],['睡','shuì'],['觉','jiào'],['。','']], translation: 'Xiaobai likes to sleep a lot.' },
+          { chars: [['它','tā'],['常','cháng'],['常','cháng'],['在','zài'],['椅','yǐ'],['子','zi'],['上','shang'],['睡','shuì'],['。','']], translation: 'It often sleeps on the chair.' },
+          { chars: [['大','dà'],['黄','huáng'],['很','hěn'],['喜','xǐ'],['欢','huān'],['跑','pǎo'],['步','bù'],['。','']], translation: 'Dahuang likes to run.' },
+          { chars: [['每','měi'],['天','tiān'],['我','wǒ'],['带','dài'],['它','tā'],['去','qù'],['公','gōng'],['园','yuán'],['。','']], translation: 'Every day I take it to the park.' },
+          { chars: [['小','xiǎo'],['白','bái'],['和','hé'],['大','dà'],['黄','huáng'],['是','shì'],['好','hǎo'],['朋','péng'],['友','you'],['。','']], translation: 'Xiaobai and Dahuang are good friends.' },
+          { chars: [['它','tā'],['们','men'],['常','cháng'],['常','cháng'],['一','yì'],['起','qǐ'],['玩','wán'],['儿','er'],['。','']], translation: 'They often play together.' },
+          { chars: [['我','wǒ'],['很','hěn'],['爱','ài'],['我','wǒ'],['的','de'],['猫','māo'],['和','hé'],['狗','gǒu'],['。','']], translation: 'I love my cat and dog very much.' },
+          { chars: [['它','tā'],['们','men'],['让','ràng'],['我','wǒ'],['的','de'],['生','shēng'],['活','huó'],['很','hěn'],['快','kuài'],['乐','lè'],['。','']], translation: 'They make my life very happy.' }
+        ]
+      },
+      {
+        id: 'breakfast',
+        title: '早饭',
+        origin: '🍳 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['每','měi'],['天','tiān'],['都','dōu'],['吃','chī'],['早','zǎo'],['饭','fàn'],['。','']], translation: 'I eat breakfast every day.' },
+          { chars: [['早','zǎo'],['饭','fàn'],['很','hěn'],['重','zhòng'],['要','yào'],['。','']], translation: 'Breakfast is very important.' },
+          { chars: [['我','wǒ'],['喜','xǐ'],['欢','huān'],['喝','hē'],['牛','niú'],['奶','nǎi'],['。','']], translation: 'I like to drink milk.' },
+          { chars: [['我','wǒ'],['也','yě'],['喜','xǐ'],['欢','huān'],['吃','chī'],['面','miàn'],['包','bāo'],['。','']], translation: 'I also like to eat bread.' },
+          { chars: [['有','yǒu'],['时','shí'],['候','hou'],['我','wǒ'],['吃','chī'],['鸡','jī'],['蛋','dàn'],['。','']], translation: 'Sometimes I eat eggs.' },
+          { chars: [['妈','mā'],['妈','ma'],['常','cháng'],['常','cháng'],['给','gěi'],['我','wǒ'],['做','zuò'],['早','zǎo'],['饭','fàn'],['。','']], translation: 'Mom often makes breakfast for me.' },
+          { chars: [['她','tā'],['做','zuò'],['的','de'],['早','zǎo'],['饭','fàn'],['很','hěn'],['好','hǎo'],['吃','chī'],['。','']], translation: 'The breakfast she makes is delicious.' },
+          { chars: [['我','wǒ'],['们','men'],['一','yì'],['起','qǐ'],['吃','chī'],['早','zǎo'],['饭','fàn'],['。','']], translation: 'We eat breakfast together.' },
+          { chars: [['吃','chī'],['完','wán'],['早','zǎo'],['饭','fàn'],['我','wǒ'],['去','qù'],['上','shàng'],['学','xué'],['。','']], translation: 'After eating breakfast I go to school.' },
+          { chars: [['好','hǎo'],['好','hāo'],['吃','chī'],['早','zǎo'],['饭','fàn'],['让','ràng'],['我','wǒ'],['有','yǒu'],['力','lì'],['气','qi'],['。','']], translation: 'Eating a good breakfast gives me energy.' },
+          { chars: [['早','zǎo'],['饭','fàn'],['是','shì'],['重','zhòng'],['要','yào'],['的','de'],['一','yì'],['餐','cān'],['。','']], translation: 'Breakfast is an important meal.' }
+        ]
+      },
+      {
+        id: 'bus',
+        title: '坐公共汽车',
+        origin: '🚌 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['家','jiā'],['离','lí'],['学','xué'],['校','xiào'],['很','hěn'],['远','yuǎn'],['。','']], translation: 'My home is far from school.' },
+          { chars: [['我','wǒ'],['每','měi'],['天','tiān'],['坐','zuò'],['公','gōng'],['共','gòng'],['汽','qì'],['车','chē'],['上','shàng'],['学','xué'],['。','']], translation: 'I take the bus to school every day.' },
+          { chars: [['车','chē'],['站','zhàn'],['离','lí'],['我','wǒ'],['家','jiā'],['很','hěn'],['近','jìn'],['。','']], translation: 'The bus stop is close to my home.' },
+          { chars: [['早','zǎo'],['上','shang'],['车','chē'],['上','shang'],['有','yǒu'],['很','hěn'],['多','duō'],['人','rén'],['。','']], translation: 'In the morning there are many people on the bus.' },
+          { chars: [['有','yǒu'],['时','shí'],['候','hou'],['我','wǒ'],['找','zhǎo'],['不','bu'],['到','dào'],['座','zuò'],['位','wèi'],['。','']], translation: "Sometimes I can't find a seat." },
+          { chars: [['我','wǒ'],['要','yào'],['站','zhàn'],['着','zhe'],['去','qù'],['学','xué'],['校','xiào'],['。','']], translation: 'I have to stand on the way to school.' },
+          { chars: [['坐','zuò'],['车','chē'],['大','dà'],['概','gài'],['要','yào'],['二','èr'],['十','shí'],['分','fēn'],['钟','zhōng'],['。','']], translation: 'The ride takes about twenty minutes.' },
+          { chars: [['我','wǒ'],['喜','xǐ'],['欢','huān'],['看','kàn'],['窗','chuāng'],['外','wài'],['的','de'],['风','fēng'],['景','jǐng'],['。','']], translation: 'I like looking at the scenery outside the window.' },
+          { chars: [['到','dào'],['了','le'],['学','xué'],['校','xiào'],['我','wǒ'],['就','jiù'],['下','xià'],['车','chē'],['。','']], translation: 'When I arrive at school I get off.' },
+          { chars: [['坐','zuò'],['公','gōng'],['共','gòng'],['汽','qì'],['车','chē'],['很','hěn'],['方','fāng'],['便','biàn'],['。','']], translation: 'Taking the bus is very convenient.' }
+        ]
+      },
+      {
+        id: 'sick',
+        title: '我生病了',
+        origin: '🤒 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['昨','zuó'],['天','tiān'],['我','wǒ'],['觉','jué'],['得','de'],['不','bù'],['舒','shū'],['服','fu'],['。','']], translation: 'Yesterday I felt unwell.' },
+          { chars: [['我','wǒ'],['头','tóu'],['很','hěn'],['疼','téng'],[',',''],['也','yě'],['发','fā'],['烧','shāo'],['了','le'],['。','']], translation: 'My head hurt a lot, and I had a fever.' },
+          { chars: [['妈','mā'],['妈','ma'],['带','dài'],['我','wǒ'],['去','qù'],['医','yī'],['院','yuàn'],['。','']], translation: 'Mom took me to the hospital.' },
+          { chars: [['医','yī'],['生','shēng'],['给','gěi'],['我','wǒ'],['检','jiǎn'],['查','chá'],['身','shēn'],['体','tǐ'],['。','']], translation: 'The doctor examined me.' },
+          { chars: [['他','tā'],['说','shuō'],['我','wǒ'],['感','gǎn'],['冒','mào'],['了','le'],['。','']], translation: 'He said I had a cold.' },
+          { chars: [['医','yī'],['生','shēng'],['给','gěi'],['我','wǒ'],['开','kāi'],['了','le'],['药','yào'],['。','']], translation: 'The doctor prescribed me medicine.' },
+          { chars: [['他','tā'],['让','ràng'],['我','wǒ'],['多','duō'],['喝','hē'],['水','shuǐ'],[',',''],['多','duō'],['休','xiū'],['息','xi'],['。','']], translation: 'He told me to drink more water and rest more.' },
+          { chars: [['我','wǒ'],['在','zài'],['家','jiā'],['休','xiū'],['息','xi'],['了','le'],['两','liǎng'],['天','tiān'],['。','']], translation: 'I rested at home for two days.' },
+          { chars: [['今','jīn'],['天','tiān'],['我','wǒ'],['觉','jué'],['得','de'],['好','hǎo'],['多','duō'],['了','le'],['。','']], translation: 'Today I feel much better.' },
+          { chars: [['我','wǒ'],['很','hěn'],['快','kuài'],['就','jiù'],['能','néng'],['去','qù'],['上','shàng'],['学','xué'],['了','le'],['。','']], translation: 'I will be able to go to school again soon.' },
+          { chars: [['生','shēng'],['病','bìng'],['真','zhēn'],['不','bù'],['舒','shū'],['服','fu'],['。','']], translation: 'Being sick really feels bad.' }
+        ]
+      },
+      {
+        id: 'sports',
+        title: '我喜欢运动',
+        origin: '⚽ HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['很','hěn'],['喜','xǐ'],['欢','huān'],['运','yùn'],['动','dòng'],['。','']], translation: 'I like sports very much.' },
+          { chars: [['我','wǒ'],['每','měi'],['天','tiān'],['早','zǎo'],['上','shang'],['跑','pǎo'],['步','bù'],['。','']], translation: 'I run every morning.' },
+          { chars: [['周','zhōu'],['末','mò'],['我','wǒ'],['喜','xǐ'],['欢','huān'],['打','dǎ'],['篮','lán'],['球','qiú'],['。','']], translation: 'On weekends I like to play basketball.' },
+          { chars: [['我','wǒ'],['也','yě'],['喜','xǐ'],['欢','huān'],['踢','tī'],['足','zú'],['球','qiú'],['。','']], translation: 'I also like to play soccer.' },
+          { chars: [['夏','xià'],['天','tiān'],['我','wǒ'],['常','cháng'],['常','cháng'],['去','qù'],['游','yóu'],['泳','yǒng'],['。','']], translation: 'In summer I often go swimming.' },
+          { chars: [['游','yóu'],['泳','yǒng'],['让','ràng'],['我','wǒ'],['觉','jué'],['得','de'],['很','hěn'],['舒','shū'],['服','fu'],['。','']], translation: 'Swimming makes me feel very good.' },
+          { chars: [['运','yùn'],['动','dòng'],['以','yǐ'],['后','hòu'],['我','wǒ'],['觉','jué'],['得','de'],['很','hěn'],['饿','è'],['。','']], translation: 'After exercising I feel very hungry.' },
+          { chars: [['我','wǒ'],['会','huì'],['喝','hē'],['很','hěn'],['多','duō'],['水','shuǐ'],['。','']], translation: 'I drink a lot of water.' },
+          { chars: [['运','yùn'],['动','dòng'],['让','ràng'],['我','wǒ'],['身','shēn'],['体','tǐ'],['很','hěn'],['好','hǎo'],['。','']], translation: 'Exercise keeps my body healthy.' },
+          { chars: [['我','wǒ'],['希','xī'],['望','wàng'],['每','měi'],['天','tiān'],['都','dōu'],['能','néng'],['运','yùn'],['动','dòng'],['。','']], translation: 'I hope I can exercise every day.' },
+          { chars: [['运','yùn'],['动','dòng'],['是','shì'],['我','wǒ'],['最','zuì'],['大','dà'],['的','de'],['爱','ài'],['好','hào'],['。','']], translation: 'Sports is my biggest hobby.' }
+        ]
+      },
+      {
+        id: 'park',
+        title: '去公园',
+        origin: '🌳 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['星','xīng'],['期','qī'],['天','tiān'],['我','wǒ'],['去','qù'],['公','gōng'],['园','yuán'],['玩','wán'],['儿','er'],['。','']], translation: 'On Sunday I go to the park to play.' },
+          { chars: [['公','gōng'],['园','yuán'],['里','li'],['有','yǒu'],['很','hěn'],['多','duō'],['树','shù'],['和','hé'],['花','huā'],['。','']], translation: 'There are many trees and flowers in the park.' },
+          { chars: [['我','wǒ'],['看','kàn'],['见','jiàn'],['很','hěn'],['多','duō'],['人','rén'],['在','zài'],['散','sàn'],['步','bù'],['。','']], translation: 'I saw many people taking walks.' },
+          { chars: [['有','yǒu'],['的','de'],['人','rén'],['在','zài'],['跑','pǎo'],['步','bù'],[',',''],['有','yǒu'],['的','de'],['人','rén'],['在','zài'],['唱','chàng'],['歌','gē'],['。','']], translation: 'Some people were running, some were singing.' },
+          { chars: [['小','xiǎo'],['孩','hái'],['子','zi'],['们','men'],['在','zài'],['一','yì'],['起','qǐ'],['玩','wán'],['儿','er'],['游','yóu'],['戏','xì'],['。','']], translation: 'Children were playing games together.' },
+          { chars: [['我','wǒ'],['坐','zuò'],['在','zài'],['椅','yǐ'],['子','zi'],['上','shang'],['看','kàn'],['书','shū'],['。','']], translation: 'I sat on a chair and read.' },
+          { chars: [['天','tiān'],['气','qì'],['很','hěn'],['好','hǎo'],[',',''],['阳','yáng'],['光','guāng'],['很','hěn'],['暖','nuǎn'],['和','huo'],['。','']], translation: 'The weather was nice, the sunshine was warm.' },
+          { chars: [['我','wǒ'],['在','zài'],['公','gōng'],['园','yuán'],['里','li'],['吃','chī'],['了','le'],['午','wǔ'],['饭','fàn'],['。','']], translation: 'I ate lunch in the park.' },
+          { chars: [['下','xià'],['午','wǔ'],['我','wǒ'],['才','cái'],['回','huí'],['家','jiā'],['。','']], translation: 'I only went home in the afternoon.' },
+          { chars: [['今','jīn'],['天','tiān'],['真','zhēn'],['是','shi'],['开','kāi'],['心','xīn'],['的','de'],['一','yì'],['天','tiān'],['。','']], translation: 'Today was truly a happy day.' }
+        ]
+      },
+      {
+        id: 'grandparents',
+        title: '爷爷奶奶',
+        origin: '👴 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['的','de'],['爷','yé'],['爷','ye'],['奶','nǎi'],['奶','nai'],['住','zhù'],['在','zài'],['乡','xiāng'],['下','xià'],['。','']], translation: 'My grandpa and grandma live in the countryside.' },
+          { chars: [['他','tā'],['们','men'],['家','jiā'],['附','fù'],['近','jìn'],['有','yǒu'],['一','yì'],['条','tiáo'],['河','hé'],['。','']], translation: 'There is a river near their home.' },
+          { chars: [['爷','yé'],['爷','ye'],['喜','xǐ'],['欢','huān'],['在','zài'],['河','hé'],['边','biān'],['钓','diào'],['鱼','yú'],['。','']], translation: 'Grandpa likes to fish by the river.' },
+          { chars: [['奶','nǎi'],['奶','nai'],['喜','xǐ'],['欢','huān'],['种','zhòng'],['花','huā'],['种','zhòng'],['菜','cài'],['。','']], translation: 'Grandma likes to grow flowers and vegetables.' },
+          { chars: [['暑','shǔ'],['假','jià'],['的','de'],['时','shí'],['候','hou'],['我','wǒ'],['去','qù'],['看','kàn'],['他','tā'],['们','men'],['。','']], translation: 'During summer vacation I visit them.' },
+          { chars: [['奶','nǎi'],['奶','nai'],['做','zuò'],['的','de'],['饭','fàn'],['特','tè'],['别','bié'],['好','hǎo'],['吃','chī'],['。','']], translation: 'The food Grandma makes is especially delicious.' },
+          { chars: [['爷','yé'],['爷','ye'],['给','gěi'],['我','wǒ'],['讲','jiǎng'],['故','gù'],['事','shi'],['。','']], translation: 'Grandpa tells me stories.' },
+          { chars: [['晚','wǎn'],['上','shang'],['我','wǒ'],['们','men'],['坐','zuò'],['在','zài'],['院','yuàn'],['子','zi'],['里','li'],['聊','liáo'],['天','tiān'],['。','']], translation: 'In the evening we sit in the yard and chat.' },
+          { chars: [['天','tiān'],['上','shang'],['有','yǒu'],['很','hěn'],['多','duō'],['星','xīng'],['星','xing'],['。','']], translation: 'There are many stars in the sky.' },
+          { chars: [['我','wǒ'],['很','hěn'],['想','xiǎng'],['念','niàn'],['爷','yé'],['爷','ye'],['奶','nǎi'],['奶','nai'],['。','']], translation: 'I miss my grandpa and grandma very much.' }
+        ]
+      },
+      {
+        id: 'chinese',
+        title: '学中文',
+        origin: '🀄 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['在','zài'],['学','xué'],['习','xí'],['中','Zhōng'],['文','wén'],['。','']], translation: 'I am learning Chinese.' },
+          { chars: [['中','Zhōng'],['文','wén'],['有','yǒu'],['一','yì'],['点','diǎn'],['儿','er'],['难','nán'],['。','']], translation: 'Chinese is a bit difficult.' },
+          { chars: [['但','dàn'],['是','shì'],['我','wǒ'],['觉','jué'],['得','de'],['很','hěn'],['有','yǒu'],['意','yì'],['思','si'],['。','']], translation: "But I think it's very interesting." },
+          { chars: [['我','wǒ'],['每','měi'],['天','tiān'],['都','dōu'],['写','xiě'],['汉','Hàn'],['字','zì'],['。','']], translation: 'I write Chinese characters every day.' },
+          { chars: [['老','lǎo'],['师','shī'],['教','jiāo'],['我','wǒ'],['们','men'],['说','shuō'],['中','Zhōng'],['文','wén'],['。','']], translation: 'The teacher teaches us to speak Chinese.' },
+          { chars: [['我','wǒ'],['常','cháng'],['常','cháng'],['看','kàn'],['中','Zhōng'],['文','wén'],['电','diàn'],['影','yǐng'],['。','']], translation: 'I often watch Chinese movies.' },
+          { chars: [['我','wǒ'],['也','yě'],['喜','xǐ'],['欢','huān'],['听','tīng'],['中','Zhōng'],['文','wén'],['歌','gē'],['。','']], translation: 'I also like listening to Chinese songs.' },
+          { chars: [['我','wǒ'],['有','yǒu'],['一','yì'],['些','xiē'],['中','Zhōng'],['国','guó'],['朋','péng'],['友','you'],['。','']], translation: 'I have some Chinese friends.' },
+          { chars: [['我','wǒ'],['们','men'],['常','cháng'],['常','cháng'],['一','yì'],['起','qǐ'],['说','shuō'],['中','Zhōng'],['文','wén'],['。','']], translation: 'We often speak Chinese together.' },
+          { chars: [['我','wǒ'],['希','xī'],['望','wàng'],['我','wǒ'],['的','de'],['中','Zhōng'],['文','wén'],['越','yuè'],['来','lái'],['越','yuè'],['好','hǎo'],['。','']], translation: 'I hope my Chinese keeps getting better.' },
+          { chars: [['学','xué'],['习','xí'],['中','Zhōng'],['文','wén'],['让','ràng'],['我','wǒ'],['很','hěn'],['快','kuài'],['乐','lè'],['。','']], translation: 'Learning Chinese makes me very happy.' }
+        ]
+      },
+      {
+        id: 'phonecall',
+        title: '打电话',
+        origin: '☎️ HSK1-2 · 原创',
+        sentences: [
+          { chars: [['昨','zuó'],['天','tiān'],['晚','wǎn'],['上','shang'],['我','wǒ'],['给','gěi'],['朋','péng'],['友','you'],['打','dǎ'],['电','diàn'],['话','huà'],['。','']], translation: 'Last night I called my friend.' },
+          { chars: [['我','wǒ'],['们','men'],['聊','liáo'],['了','le'],['很','hěn'],['长','cháng'],['时','shí'],['间','jiān'],['。','']], translation: 'We chatted for a long time.' },
+          { chars: [['她','tā'],['问','wèn'],['我','wǒ'],['周','zhōu'],['末','mò'],['做','zuò'],['什','shén'],['么','me'],['。','']], translation: 'She asked what I was doing this weekend.' },
+          { chars: [['我','wǒ'],['说','shuō'],['我','wǒ'],['想','xiǎng'],['去','qù'],['看','kàn'],['电','diàn'],['影','yǐng'],['。','']], translation: 'I said I wanted to go see a movie.' },
+          { chars: [['她','tā'],['说','shuō'],['她','tā'],['也','yě'],['想','xiǎng'],['去','qù'],['。','']], translation: 'She said she wanted to go too.' },
+          { chars: [['我','wǒ'],['们','men'],['决','jué'],['定','dìng'],['周','zhōu'],['六','liù'],['一','yì'],['起','qǐ'],['去','qù'],['。','']], translation: 'We decided to go together on Saturday.' },
+          { chars: [['我','wǒ'],['很','hěn'],['高','gāo'],['兴','xìng'],['能','néng'],['和','hé'],['她','tā'],['见','jiàn'],['面','miàn'],['。','']], translation: 'I was happy to be able to meet her.' },
+          { chars: [['打','dǎ'],['电','diàn'],['话','huà'],['让','ràng'],['我','wǒ'],['们','men'],['更','gèng'],['了','liǎo'],['解','jiě'],['彼','bǐ'],['此','cǐ'],['。','']], translation: 'Phone calls help us understand each other better.' },
+          { chars: [['我','wǒ'],['很','hěn'],['喜','xǐ'],['欢','huān'],['和','hé'],['朋','péng'],['友','you'],['聊','liáo'],['天','tiān'],['。','']], translation: 'I really like chatting with friends.' },
+          { chars: [['打','dǎ'],['电','diàn'],['话','huà'],['是','shì'],['很','hěn'],['方','fāng'],['便','biàn'],['的','de'],['事','shì'],['。','']], translation: 'Making phone calls is very convenient.' }
+        ]
+      },
+      {
+        id: 'fruit',
+        title: '买水果',
+        origin: '🍎 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['妈','mā'],['妈','ma'],['让','ràng'],['我','wǒ'],['去','qù'],['买','mǎi'],['水','shuǐ'],['果','guǒ'],['。','']], translation: 'Mom asked me to go buy fruit.' },
+          { chars: [['水','shuǐ'],['果','guǒ'],['店','diàn'],['离','lí'],['家','jiā'],['不','bù'],['远','yuǎn'],['。','']], translation: 'The fruit shop is not far from home.' },
+          { chars: [['店','diàn'],['里','li'],['有','yǒu'],['苹','píng'],['果','guǒ'],['、',''],['香','xiāng'],['蕉','jiāo'],['和','hé'],['西','xī'],['瓜','guā'],['。','']], translation: 'The shop has apples, bananas, and watermelons.' },
+          { chars: [['我','wǒ'],['买','mǎi'],['了','le'],['三','sān'],['个','gè'],['苹','píng'],['果','guǒ'],['。','']], translation: 'I bought three apples.' },
+          { chars: [['我','wǒ'],['也','yě'],['买','mǎi'],['了','le'],['一','yì'],['些','xiē'],['香','xiāng'],['蕉','jiāo'],['。','']], translation: 'I also bought some bananas.' },
+          { chars: [['西','xī'],['瓜','guā'],['太','tài'],['大','dà'],['了','le'],[',',''],['我','wǒ'],['没','méi'],['有','yǒu'],['买','mǎi'],['。','']], translation: "The watermelon was too big, so I didn't buy it." },
+          { chars: [['老','lǎo'],['板','bǎn'],['说','shuō'],['苹','píng'],['果','guǒ'],['很','hěn'],['甜','tián'],['。','']], translation: 'The owner said the apples are very sweet.' },
+          { chars: [['我','wǒ'],['付','fù'],['了','le'],['钱','qián'],['就','jiù'],['回','huí'],['家','jiā'],['了','le'],['。','']], translation: 'I paid and went home.' },
+          { chars: [['妈','mā'],['妈','ma'],['说','shuō'],['我','wǒ'],['买','mǎi'],['得','de'],['很','hěn'],['好','hǎo'],['。','']], translation: 'Mom said I did a good job buying.' },
+          { chars: [['晚','wǎn'],['饭','fàn'],['后','hòu'],['我','wǒ'],['们','men'],['一','yì'],['起','qǐ'],['吃','chī'],['水','shuǐ'],['果','guǒ'],['。','']], translation: 'After dinner we ate fruit together.' }
+        ]
+      },
+      {
+        id: 'rain',
+        title: '下雨天',
+        origin: '☔ HSK1-2 · 原创',
+        sentences: [
+          { chars: [['今','jīn'],['天','tiān'],['下','xià'],['雨','yǔ'],['了','le'],['。','']], translation: 'Today it rained.' },
+          { chars: [['我','wǒ'],['没','méi'],['有','yǒu'],['带','dài'],['伞','sǎn'],['。','']], translation: "I didn't bring an umbrella." },
+          { chars: [['我','wǒ'],['只','zhǐ'],['好','hǎo'],['在','zài'],['教','jiào'],['室','shì'],['里','li'],['等','děng'],['。','']], translation: 'I had no choice but to wait in the classroom.' },
+          { chars: [['雨','yǔ'],['越','yuè'],['下','xià'],['越','yuè'],['大','dà'],['。','']], translation: 'The rain got heavier and heavier.' },
+          { chars: [['我','wǒ'],['的','de'],['朋','péng'],['友','you'],['带','dài'],['了','le'],['两','liǎng'],['把','bǎ'],['伞','sǎn'],['。','']], translation: 'My friend brought two umbrellas.' },
+          { chars: [['她','tā'],['给','gěi'],['了','le'],['我','wǒ'],['一','yì'],['把','bǎ'],['。','']], translation: 'She gave me one.' },
+          { chars: [['我','wǒ'],['们','men'],['一','yì'],['起','qǐ'],['走','zǒu'],['回','huí'],['家','jiā'],['。','']], translation: 'We walked home together.' },
+          { chars: [['路','lù'],['上','shang'],['的','de'],['水','shuǐ'],['很','hěn'],['多','duō'],['。','']], translation: 'There was a lot of water on the road.' },
+          { chars: [['我','wǒ'],['们','men'],['的','de'],['鞋','xié'],['子','zi'],['都','dōu'],['湿','shī'],['了','le'],['。','']], translation: 'Our shoes both got wet.' },
+          { chars: [['到','dào'],['家','jiā'],['以','yǐ'],['后','hòu'],['妈','mā'],['妈','ma'],['给','gěi'],['我','wǒ'],['热','rè'],['汤','tāng'],['喝','hē'],['。','']], translation: 'After I got home, Mom gave me hot soup to drink.' },
+          { chars: [['下','xià'],['雨','yǔ'],['天','tiān'],['也','yě'],['有','yǒu'],['温','wēn'],['暖','nuǎn'],['的','de'],['时','shí'],['刻','kè'],['。','']], translation: 'Rainy days also have warm moments.' },
+          { chars: [['我','wǒ'],['很','hěn'],['谢','xiè'],['谢','xie'],['我','wǒ'],['的','de'],['朋','péng'],['友','you'],['。','']], translation: 'I am very grateful to my friend.' }
+        ]
+      },
+      {
+        id: 'teacher',
+        title: '我的老师',
+        origin: '👩‍🏫 HSK1-2 · 原创',
+        sentences: [
+          { chars: [['我','wǒ'],['的','de'],['中','Zhōng'],['文','wén'],['老','lǎo'],['师','shī'],['姓','xìng'],['王','Wáng'],['。','']], translation: "My Chinese teacher's surname is Wang." },
+          { chars: [['王','Wáng'],['老','lǎo'],['师','shī'],['教','jiāo'],['我','wǒ'],['们','men'],['三','sān'],['年','nián'],['了','le'],['。','']], translation: 'Teacher Wang has taught us for three years.' },
+          { chars: [['她','tā'],['说','shuō'],['话','huà'],['很','hěn'],['清','qīng'],['楚','chu'],[',',''],['也','yě'],['很','hěn'],['有','yǒu'],['耐','nài'],['心','xīn'],['。','']], translation: 'She speaks clearly and is very patient.' },
+          { chars: [['上','shàng'],['课','kè'],['的','de'],['时','shí'],['候','hou'],['她','tā'],['常','cháng'],['常','cháng'],['给','gěi'],['我','wǒ'],['们','men'],['讲','jiǎng'],['故','gù'],['事','shi'],['。','']], translation: 'During class she often tells us stories.' },
+          { chars: [['我','wǒ'],['们','men'],['都','dōu'],['很','hěn'],['喜','xǐ'],['欢','huān'],['听','tīng'],['她','tā'],['讲','jiǎng'],['课','kè'],['。','']], translation: 'We all like listening to her lessons.' },
+          { chars: [['如','rú'],['果','guǒ'],['我','wǒ'],['们','men'],['不','bù'],['懂','dǒng'],[',',''],['她','tā'],['会','huì'],['再','zài'],['讲','jiǎng'],['一','yí'],['次','cì'],['。','']], translation: "If we don't understand, she will explain again." },
+          { chars: [['她','tā'],['从','cóng'],['来','lái'],['不','bù'],['生','shēng'],['气','qì'],['。','']], translation: 'She never gets angry.' },
+          { chars: [['我','wǒ'],['们','men'],['都','dōu'],['很','hěn'],['尊','zūn'],['敬','jìng'],['她','tā'],['。','']], translation: 'We all respect her very much.' },
+          { chars: [['王','Wáng'],['老','lǎo'],['师','shī'],['是','shì'],['一','yí'],['位','wèi'],['好','hǎo'],['老','lǎo'],['师','shī'],['。','']], translation: 'Teacher Wang is a good teacher.' }
+        ]
+      }
+    ];
+
+    // -------- state --------
+    let currentStoryIndex = 0;
+    let showPinyin = false;
+    let showTranslation = false;
+    let currentSentenceIndex = 0; // 0-based
+
+    // DOM refs
+    const storySelector = document.getElementById('storySelector');
+    const storyTitle = document.getElementById('storyTitle');
+    const storyOrigin = document.getElementById('storyOrigin');
+    const sentencesContainer = document.getElementById('sentencesContainer');
+    const togglePinyinBtn = document.getElementById('togglePinyinBtn');
+    const toggleTranslationBtn = document.getElementById('toggleTranslationBtn');
+    const progressDisplay = document.getElementById('progressDisplay');
+
+    // -------- render function --------
+    function renderStory() {
+      const story = STORIES[currentStoryIndex];
+      if (!story) return;
+
+      // update title
+      storyTitle.textContent = story.title;
+      storyOrigin.textContent = story.origin;
+
+      // build sentences HTML
+      let html = '';
+      story.sentences.forEach((s, idx) => {
+        const translationDisplay = showTranslation ? `<div class="translation">${s.translation}</div>` : '';
+        const charsHtml = s.chars.map(([hz, py]) => `
+          <div class="char-col">
+            <div class="hanzi-char">${hz}</div>
+            <div class="pinyin-char">${py || '&nbsp;'}</div>
+          </div>
+        `).join('');
+
+        html += `
+          <div class="sentence${showPinyin ? ' show-pinyin' : ''}" data-index="${idx}">
+            <div class="char-line">${charsHtml}</div>
+            ${translationDisplay}
+          </div>
+        `;
+      });
+      sentencesContainer.innerHTML = html;
+
+      // update progress
+      const total = story.sentences.length;
+      progressDisplay.textContent = `句子 ${currentSentenceIndex + 1} / ${total}`;
+
+      // attach click-to-speak on each sentence
+      document.querySelectorAll('.sentence').forEach((el, idx) => {
+        el.addEventListener('click', function() {
+          const s = story.sentences[idx];
+          const hanzi = s.chars.map(c => c[0]).join('');
+          const pinyin = s.chars.map(c => c[1]).filter(Boolean).join(' ');
+          const textToSpeak = showPinyin ? pinyin : hanzi; // read pinyin if visible, else hanzi
+          if (textToSpeak && window.speechSynthesis) {
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;
+            speechSynthesis.cancel(); // avoid overlapping
+            speechSynthesis.speak(utterance);
+          }
+          currentSentenceIndex = idx;
+          updateActiveStyle();
+          updateProgress();
+        });
+      });
+
+      // set active class
+      updateActiveStyle();
+    }
+
+    function updateActiveStyle() {
+      document.querySelectorAll('.sentence').forEach((el, idx) => {
+        el.style.background = (idx === currentSentenceIndex) ? '#f0e3da' : 'transparent';
+      });
+    }
+
+    function updateProgress() {
+      const story = STORIES[currentStoryIndex];
+      if (story) {
+        progressDisplay.textContent = `句子 ${currentSentenceIndex + 1} / ${story.sentences.length}`;
+      }
+    }
+
+    // -------- render story buttons --------
+    function renderStoryButtons() {
+      storySelector.innerHTML = '';
+      STORIES.forEach((story, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `story-btn ${idx === currentStoryIndex ? 'active' : ''}`;
+        btn.textContent = story.title;
+        btn.dataset.index = idx;
+        btn.addEventListener('click', function() {
+          const newIdx = parseInt(this.dataset.index);
+          if (newIdx === currentStoryIndex) return;
+          currentStoryIndex = newIdx;
+          currentSentenceIndex = 0; // reset to first
+          // update active button
+          document.querySelectorAll('.story-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          // re-render story
+          renderStory();
+          // reset toggle button texts (optional)
+        });
+        storySelector.appendChild(btn);
+      });
+    }
+
+    // -------- toggle functions --------
+    function togglePinyin() {
+      showPinyin = !showPinyin;
+      togglePinyinBtn.textContent = showPinyin ? '🔤 隐藏拼音' : '🔤 显示拼音';
+      togglePinyinBtn.classList.toggle('on', showPinyin);
+      renderStory(); // re-render with new setting
+    }
+
+    function toggleTranslation() {
+      showTranslation = !showTranslation;
+      toggleTranslationBtn.textContent = showTranslation ? '🌐 隐藏翻译' : '🌐 显示翻译';
+      toggleTranslationBtn.classList.toggle('on', showTranslation);
+      renderStory();
+    }
+
+    // -------- init --------
+    function init() {
+      renderStoryButtons();
+      renderStory();
+      // set initial toggle states
+      togglePinyinBtn.textContent = '🔤 显示拼音';
+      toggleTranslationBtn.textContent = '🌐 显示翻译';
+      togglePinyinBtn.classList.remove('on');
+      toggleTranslationBtn.classList.remove('on');
+      showPinyin = false;
+      showTranslation = false;
+
+      // event listeners
+      togglePinyinBtn.addEventListener('click', togglePinyin);
+      toggleTranslationBtn.addEventListener('click', toggleTranslation);
+    }
+
+    init();
+  })();
+</script>
+</body>
+</html>
